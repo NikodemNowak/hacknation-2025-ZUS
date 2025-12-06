@@ -285,7 +285,7 @@ body {
 .content-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 40px 32px;
+  padding: 12px 32px;
 }
 
 .page-title {
@@ -293,6 +293,7 @@ body {
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 32px;
+  padding-top: 8px;
 }
 
 /* ===== Content Grid ===== */
