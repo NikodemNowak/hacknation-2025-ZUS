@@ -1,5 +1,4 @@
 import json
-import os
 from typing import List, Dict, Any
 
 from prompts.constants import CHECKLISTA_PYTAN
@@ -63,6 +62,30 @@ def extract_info_from_text(current_checklist: Dict[str, Any], history_str: str) 
     5. Puste pola (null) pozostaw jako null jeśli nie ma informacji.
     6. Zwróć CAŁY zaktualizowany obiekt JSON z WSZYSTKIMI polami checklisty.
     7. Zachowaj klucze dokładnie takie same jak w oryginalnej checkliście.
+    
+      SZCZEGÓŁOWE WYTYCZNE DLA PÓL (BARDZO WAŻNE):
+    
+    A. "rodzaj_czynnosci":
+       - NIE wpisuj słowa "praca" ani "wykonywanie obowiązków". To zbyt ogólne.
+       - Wpisz KONKRETNĄ czynność fizyczną, np.: "wchodzenie po schodach", "obsługa maszyny", "przenoszenie paczek", "siedzenie przy biurku".
+       - Jeśli użytkownik napisał "przewróciłem się na schodach", czynnością było "przemieszczanie się po schodach".
+    
+    B. "okolicznosci_wypadku":
+       - Opisz krótko kontekst sytuacyjny, np. "poślizgnięcie się na mokrej nawierzchni podczas schodzenia".
+    
+    C. "sekwencja_zdarzen":
+       - Musi to być ciąg przyczynowo-skutkowy.
+       - Przykład: "Poszkodowany wchodził na schody -> Potknął się o stopień -> Upadł i skręcił nogę".
+       - Jeśli użytkownik podał tylko skutek (upadłem), a nie przyczynę (dlaczego?), zostaw to pole null lub wpisz tylko to co pewne.
+
+    D. "opis_miejsca_wypadku":
+       - Wyciągnij cechy otoczenia: "mokra podłoga", "ciemna klatka schodowa", "nierówne stopnie".
+       - Jeśli użytkownik napisał tylko "schody", wpisz "schody w miejscu pracy".
+
+    E. Pola logiczne (BHP, Maszyny, Świadkowie):
+       - Jeśli użytkownik nie wspomniał o temacie -> ZOSTAW null.
+       - Wpisz "NIE DOTYCZY" lub "BRAK" tylko jeśli użytkownik wyraźnie zaprzeczył.
+
 
     WAŻNE: Odpowiedz TYLKO poprawnym JSONem, bez dodatkowego tekstu.
     """
@@ -76,10 +99,10 @@ def extract_info_from_text(current_checklist: Dict[str, Any], history_str: str) 
 
         updated_data = json.loads(response_json_str)
 
-        # Aktualizuj tylko te pola, które LLM wypełnił
+        # Update only fileds, wchich LLM did this time
         for key, value in updated_data.items():
             if key in current_checklist:
-                # Aktualizuj jeśli wartość nie jest pusta i nie jest None
+                # Update with Aktualizuj jeśli wartość nie jest pusta i nie jest None
                 if value and value not in [None, "", "null"]:
                     current_checklist[key] = value
 
@@ -120,7 +143,7 @@ def generate_next_question(missing_fields: List[str], history_str: str) -> str:
         if response and response.strip():
             return response.strip()
         else:
-            # Fallback na proste pytanie
+            # Fallback
             return f"Proszę podać informację dotyczącą: {missing_fields[0]}?"
 
     except Exception as e:
@@ -134,13 +157,13 @@ def process_event_step(
         history: str
 ) -> Dict[str, Any]:
 
-    # Dodaj wiadomość użytkownika do historii
+    # Add user input to history
     updated_history = history + f"\nUser: {user_input}"
 
-    # Ekstrakcja informacji z użyciem LLM
+    # Extract new info from text
     new_checklist_state = extract_info_from_text(checklist_state, updated_history)
 
-    # Sprawdź brakujące pola
+    # Check for missing fields
     missing_fields = [
         missing_info_key
         for missing_info_key, missing_info_value in new_checklist_state.items()
@@ -148,10 +171,10 @@ def process_event_step(
     ]
     is_finished = len(missing_fields) == 0
 
-    # Wygeneruj następne pytanie
+    # Generate next question if not finished
     ai_response = generate_next_question(missing_fields, updated_history)
 
-    # Dodaj odpowiedź AI do historii
+    # Add AI response to history
     updated_history += f"\nAI: {ai_response}"
 
     return {
