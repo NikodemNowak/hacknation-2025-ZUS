@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
-from backend.database.db import wyjasnienia_db
+from models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
+from database.db import wyjasnienia_db
 
 router = APIRouter(
     prefix="/wyjasnienia",

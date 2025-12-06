@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from backend.database.db import dzialalnosci_db
-from backend.models.Dzialalnosc import Dzialalnosc
+from database.db import dzialalnosci_db
+from models.Dzialalnosc import Dzialalnosc
 from typing import List
 
 router = APIRouter(
