@@ -1147,6 +1147,66 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
                 </select>
               </div>
 
+              {formData.czy_wypadek_podczas_obslugi_maszyn && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="nazwa_maszyny">
+                      Nazwa maszyny/urządzenia
+                    </label>
+                    <input
+                      type="text"
+                      id="nazwa_maszyny"
+                      name="nazwa_maszyny"
+                      value={formData.nazwa_maszyny || ''}
+                      onChange={handleChange}
+                      placeholder="Np. piła tarczowa, wózek widłowy"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="producent_maszyny">
+                      Producent maszyny
+                    </label>
+                    <input
+                      type="text"
+                      id="producent_maszyny"
+                      name="producent_maszyny"
+                      value={formData.producent_maszyny || ''}
+                      onChange={handleChange}
+                      placeholder="Nazwa producenta"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="rok_produkcji_maszyny">
+                      Rok produkcji
+                    </label>
+                    <input
+                      type="text"
+                      id="rok_produkcji_maszyny"
+                      name="rok_produkcji_maszyny"
+                      value={formData.rok_produkcji_maszyny || ''}
+                      onChange={handleChange}
+                      placeholder="RRRR"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="numer_seryjny_maszyny">
+                      Numer seryjny maszyny
+                    </label>
+                    <input
+                      type="text"
+                      id="numer_seryjny_maszyny"
+                      name="numer_seryjny_maszyny"
+                      value={formData.numer_seryjny_maszyny || ''}
+                      onChange={handleChange}
+                      placeholder="Numer seryjny"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="form-group form-group-full">
                 <label htmlFor="czy_stosowane_zabezpieczenia">
                   Czy były stosowane zabezpieczenia przed wypadkiem? <span className="required">*</span>

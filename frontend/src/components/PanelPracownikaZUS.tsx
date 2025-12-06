@@ -8,37 +8,37 @@ interface PanelPracownikaZUSProps {
 // Ikony
 const ClipboardIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
   </svg>
 )
 
 const EyeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 )
 
 const AccidentIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-    <line x1="12" y1="9" x2="12" y2="13"/>
-    <line x1="12" y1="17" x2="12.01" y2="17"/>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 )
 
 const FilterIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+    <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3" />
   </svg>
 )
 
 // Dane mockowe - formularze do recenzji
 const formulazeDoRecenzji = [
-  { 
-    id: 1, 
-    dataZgloszenia: '15.03.2024', 
+  {
+    id: 1,
+    dataZgloszenia: '15.03.2024',
     platnik: 'Jan Kowalski Usługi Budowlane',
     nip: '1234567890',
     poszkodowany: 'Anna Nowak',
@@ -46,9 +46,9 @@ const formulazeDoRecenzji = [
     status: 'pending',
     priorytet: 'high'
   },
-  { 
-    id: 2, 
-    dataZgloszenia: '14.03.2024', 
+  {
+    id: 2,
+    dataZgloszenia: '14.03.2024',
     platnik: 'ABC Transport Sp. z o.o.',
     nip: '9876543210',
     poszkodowany: 'Piotr Wiśniewski',
@@ -56,9 +56,9 @@ const formulazeDoRecenzji = [
     status: 'pending',
     priorytet: 'normal'
   },
-  { 
-    id: 3, 
-    dataZgloszenia: '13.03.2024', 
+  {
+    id: 3,
+    dataZgloszenia: '13.03.2024',
     platnik: 'XYZ Budowa Sp. z o.o.',
     nip: '5555666777',
     poszkodowany: 'Maria Kowalczyk',
@@ -66,9 +66,9 @@ const formulazeDoRecenzji = [
     status: 'in_review',
     priorytet: 'normal'
   },
-  { 
-    id: 4, 
-    dataZgloszenia: '12.03.2024', 
+  {
+    id: 4,
+    dataZgloszenia: '12.03.2024',
     platnik: 'Delta Services Sp. z o.o.',
     nip: '3333444555',
     poszkodowany: 'Tomasz Lewandowski',
@@ -76,9 +76,9 @@ const formulazeDoRecenzji = [
     status: 'pending',
     priorytet: 'low'
   },
-  { 
-    id: 5, 
-    dataZgloszenia: '10.03.2024', 
+  {
+    id: 5,
+    dataZgloszenia: '10.03.2024',
     platnik: 'Gamma Production Sp. z o.o.',
     nip: '7777888999',
     poszkodowany: 'Katarzyna Zielińska',
@@ -86,9 +86,9 @@ const formulazeDoRecenzji = [
     status: 'in_review',
     priorytet: 'high'
   },
-  { 
-    id: 6, 
-    dataZgloszenia: '09.03.2024', 
+  {
+    id: 6,
+    dataZgloszenia: '09.03.2024',
     platnik: 'Beta Logistics Sp. z o.o.',
     nip: '2222333444',
     poszkodowany: 'Jan Kowalski',
@@ -96,9 +96,9 @@ const formulazeDoRecenzji = [
     status: 'approved',
     priorytet: 'normal'
   },
-  { 
-    id: 7, 
-    dataZgloszenia: '08.03.2024', 
+  {
+    id: 7,
+    dataZgloszenia: '08.03.2024',
     platnik: 'Omega Construction Sp. z o.o.',
     nip: '6666777888',
     poszkodowany: 'Ewa Mazur',
@@ -113,7 +113,7 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
 
   const getStatusLabel = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'pending': return 'Oczekuje na weryfikację'
       case 'in_review': return 'W trakcie weryfikacji'
       case 'approved': return 'Zaakceptowano'
@@ -123,7 +123,7 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
   }
 
   const getPriorityLabel = (priority: string) => {
-    switch(priority) {
+    switch (priority) {
       case 'high': return 'Wysoki'
       case 'normal': return 'Normalny'
       case 'low': return 'Niski'
@@ -193,7 +193,7 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
         <div className="filters-content">
           <div className="filter-group">
             <label htmlFor="status-filter">Status:</label>
-            <select 
+            <select
               id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -208,7 +208,7 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
 
           <div className="filter-group">
             <label htmlFor="priority-filter">Priorytet:</label>
-            <select 
+            <select
               id="priority-filter"
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
@@ -271,8 +271,8 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
                       </span>
                     </td>
                     <td>
-                      <button 
-                        className="btn-action" 
+                      <button
+                        className="btn-action"
                         onClick={() => handleVerifyForm(form.id)}
                       >
                         Weryfikuj
