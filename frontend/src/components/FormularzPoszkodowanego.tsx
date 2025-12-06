@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './FormularzPoszkodowanego.css'
 
 interface Adres {
   ulica: string

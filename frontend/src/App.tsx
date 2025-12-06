@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import zusLogo from './assets/zus.svg'
-import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
+import FormularzKrokowy from './components/FormularzKrokowy'
 
 // Ikony jako komponenty SVG
 const DashboardIcon = () => (
@@ -239,8 +239,7 @@ function App() {
             </>
           ) : (
             <>
-              <h1 className="page-title">Dane poszkodowanego</h1>
-              <FormularzPoszkodowanego 
+              <FormularzKrokowy 
                 onSubmit={handleSubmitForm}
                 onCancel={handleCancelForm}
               />
