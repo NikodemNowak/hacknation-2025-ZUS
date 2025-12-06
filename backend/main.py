@@ -1,10 +1,9 @@
-# ========== backend/main.py ==========
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from backend.config import settings
-from backend.routes import poszkodowani_router, adres_router
+from backend.routes import poszkodowani_router, adres_router, wyjasnienia_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -22,6 +21,7 @@ app.add_middleware(
 
 app.include_router(poszkodowani_router, prefix=settings.api_prefix)
 app.include_router(adres_router, prefix=settings.api_prefix)
+app.include_router(wyjasnienia_router, prefix=settings.api_prefix)
 
 
 @app.get("/")
