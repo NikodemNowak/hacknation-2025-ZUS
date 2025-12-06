@@ -448,7 +448,6 @@ function App() {
           {/* Widok Formularza */}
           {currentView === 'form' && (
             <>
-              <h1 className="page-title">Dane poszkodowanego</h1>
               {formMode === 'step-by-step' ? (
                 <FormularzKrokowy 
                   onSubmit={handleSubmitForm}
