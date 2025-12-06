@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import AIChatAssistant from './AIChatAssistant'
 import './FormularzKrokowy.css'
 
 interface Adres {
@@ -144,9 +145,6 @@ const takNieOptions = [
   { value: 'nie', label: 'Nie' }
 ]
 
-// Ikony
-
-
 const ArrowRightIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="5" y1="12" x2="19" y2="12" />
@@ -186,6 +184,14 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   const [currentFieldIndex, setCurrentFieldIndex] = useState(0)
   const [inputValue, setInputValue] = useState('')
   const [animationClass, setAnimationClass] = useState('')
+  const [showAiChat, setShowAiChat] = useState(false)
+
+  const handleAiText = (text: string) => {
+    // Append the generated text to the current input
+    const newText = inputValue ? `${inputValue} ${text}` : text
+    setInputValue(newText)
+    setShowAiChat(false)
+  }
 
   // Dynamiczne sekcje z logiką warunkową
   const getSections = (): Section[] => {
@@ -500,16 +506,15 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       {/* Wskaźnik wszystkich sekcji */}
       <div className="sections-indicator">
         {sections.map((section, index) => (
-          <>
+          <div key={`section-${index}`} style={{ display: 'contents' }}>
             <div
-              key={index}
               className={`progress-step ${index === currentSectionIndex ? 'active' : ''} ${index < currentSectionIndex ? 'completed' : ''}`}
             >
               <div className="step-number">{index + 1}</div>
               <div className="step-label">{section.title}</div>
             </div>
-            {index < sections.length - 1 && <div key={`line-${index}`} className="progress-line"></div>}
-          </>
+            {index < sections.length - 1 && <div className="progress-line"></div>}
+          </div>
         ))}
       </div>
 
@@ -548,17 +553,29 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
             ))}
           </select>
         ) : currentField.type === 'textarea' ? (
-          <textarea
-            className="field-input field-textarea"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder={currentField.placeholder}
-            maxLength={currentField.maxLength}
-            minLength={currentField.minLength}
-            rows={6}
-            autoFocus
-          />
+          <div className="textarea-container">
+            <textarea
+              className="field-input field-textarea"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={currentField.placeholder}
+              maxLength={currentField.maxLength}
+              minLength={currentField.minLength}
+              rows={6}
+              autoFocus
+            />
+            {currentField.name === 'opis_okolicznosci' && (
+              <div className="ai-chat-trigger">
+                <button
+                  className="btn-ai-chat"
+                  onClick={() => setShowAiChat(true)}
+                >
+                  ✨ Uruchom Asystenta AI (Czat)
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <input
             type={currentField.type}
@@ -582,6 +599,15 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
           Naciśnij <kbd>Enter</kbd> ↵ aby przejść dalej
         </div>
       </div>
+
+      {/* AI Chat Assistant Overlay */}
+      {showAiChat && (
+        <AIChatAssistant
+          currentText={inputValue}
+          onClose={() => setShowAiChat(false)}
+          onUseText={handleAiText}
+        />
+      )}
 
       {/* Przyciski nawigacji */}
       <div className="form-krokowy-actions">
