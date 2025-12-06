@@ -2,9 +2,9 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from uuid import uuid4
 
-from backend.models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
-from backend.models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
-from backend.models.Poszkodowany import Poszkodowany
+from .ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
+from .ZawiadomienieOWypadku import ZawiadomienieOWypadku
+from .Poszkodowany import Poszkodowany
 
 
 class Case(BaseModel):

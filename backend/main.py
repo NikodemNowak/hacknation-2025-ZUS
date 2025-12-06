@@ -5,7 +5,7 @@ import uvicorn
 from uuid import uuid4
 from datetime import date
 
-from backend.database import cases_db
+from database import cases_db
 from config import settings
 from routes import poszkodowani_router, adres_router, event_description_router, case_router
 

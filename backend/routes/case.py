@@ -3,11 +3,11 @@ from typing import List, Optional
 from datetime import date
 from uuid import uuid4
 
-from backend.database.db import cases_db
+from database.db import cases_db
 
-from backend.models.Case import Case
-from backend.models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
-from backend.models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
+from models.Case import Case
+from models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
+from models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
 
 router = APIRouter()
 
