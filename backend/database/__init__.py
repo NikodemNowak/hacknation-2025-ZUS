@@ -1,3 +1,15 @@
-from .db import poszkodowani_db
+from .db import (
+    poszkodowani_db,
+    dzialalnosci_db,
+    adresy_db,
+    zawiadomienia_db,
+    wyjasnienia_db
+)
 
-__all__ = ["poszkodowani_db"]
+__all__ = [
+    "poszkodowani_db",
+    "dzialalnosci_db",
+    "adresy_db",
+    "zawiadomienia_db",
+    "wyjasnienia_db"
+]

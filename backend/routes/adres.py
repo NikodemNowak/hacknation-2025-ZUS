@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.database.db import poszkodowani_db
+from database.db import poszkodowani_db
 
 router = APIRouter(
     prefix="/adresy",

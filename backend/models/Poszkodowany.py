@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field, field_validator
 from datetime import date
 import re
@@ -19,6 +21,9 @@ class Poszkodowany(BaseModel):
     miejsce_urodzenia: str = Field(..., description="Miejsce urodzenia")
     numer_telefonu: str = Field(..., description="Numer telefonu kontaktowego")
     adres_zamieszkania: Adres = Field(..., description="Adres zamieszkania")
+    adres_korespondencyjny: Adres | None = Field(None, description="Adres korespondencyjny (opcjonalnie)")
+    adres_ostatniego_zamieszkania_polska: Optional[Adres] = Field(None,
+                                                                  description="Adres ostatniego miejsca zamieszkania w Polsce (dla osób mieszkających za granicą)")
 
     
 
@@ -66,6 +71,7 @@ class Poszkodowany(BaseModel):
                     "kod_pocztowy": "00-001",
                     "miejscowosc": "Warszawa",
                     "panstwo": "Polska"
-                }
+                },
+                "adres_korespondencyjny": None
             }
         }
