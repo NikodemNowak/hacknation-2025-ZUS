@@ -182,6 +182,56 @@ body {
   color: var(--zus-green);
 }
 
+/* Role Switch Button */
+.btn-role-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--zus-green);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 122, 51, 0.2);
+}
+
+.btn-role-switch:hover {
+  background-color: var(--zus-green-dark);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 122, 51, 0.3);
+}
+
+.role-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Info Box */
+.info-box {
+  background-color: var(--zus-green-light);
+  border-left: 4px solid var(--zus-green);
+  padding: 20px 24px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.info-box p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.info-box strong {
+  color: var(--zus-green);
+  font-weight: 600;
+}
+
 /* ===== Main Navigation ===== */
 .main-nav {
   background-color: var(--header-bg);
@@ -451,6 +501,15 @@ body {
 
   .logo-separator {
     display: none;
+  }
+
+  .btn-role-switch .role-label {
+    display: none;
+  }
+
+  .btn-role-switch {
+    padding: 8px;
+    border-radius: 50%;
   }
 
   .main-nav-content {
