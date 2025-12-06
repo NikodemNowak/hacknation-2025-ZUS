@@ -306,10 +306,12 @@
 .btn-prev {
   background-color: white;
   color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+}
 
-  50% {
-    transform: translateY(-10px);
-  }
+.btn-prev:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
 }
 
 .slide-out-left {
