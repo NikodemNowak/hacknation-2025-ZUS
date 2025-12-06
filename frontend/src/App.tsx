@@ -449,10 +449,6 @@ function App() {
           {currentView === 'form' && (
             <>
               <h1 className="page-title">Dane poszkodowanego</h1>
-              <FormularzPoszkodowanego
-                onSubmit={handleSubmitForm}
-                onCancel={handleCancelForm}
-              />
               {formMode === 'step-by-step' ? (
                 <FormularzKrokowy 
                   onSubmit={handleSubmitForm}
