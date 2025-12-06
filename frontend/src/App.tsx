@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import zusLogo from './assets/zus.svg'
+import FormularzKrokowy from './components/FormularzKrokowy'
 import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
+import PanelPracownikaZUS from './components/PanelPracownikaZUS'
+import WidokWeryfikacji from './components/WidokWeryfikacji'
 
 // Ikony jako komponenty SVG
 const DashboardIcon = () => (
@@ -85,7 +88,9 @@ interface Case {
 // API Config
 const API_URL = 'http://127.0.0.1:8000'
 
-type ViewType = 'dashboard' | 'form'
+type ViewType = 'dashboard' | 'form' | 'zus-panel' | 'verification'
+type UserRole = 'platnik' | 'pracownik_zus'
+type FormMode = 'classic' | 'step-by-step'
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard')
@@ -127,6 +132,9 @@ function App() {
       alert('Błąd połączenia z serwerem')
     }
   }
+  const [userRole, setUserRole] = useState<UserRole>('platnik')
+  const [selectedFormId, setSelectedFormId] = useState<number | null>(null)
+  const [formMode, setFormMode] = useState<FormMode>('step-by-step')
 
   const handleStartForm = () => {
     setCurrentView('form')
@@ -142,6 +150,37 @@ function App() {
     setCurrentView('dashboard')
   }
 
+  const toggleUserRole = () => {
+    const newRole = userRole === 'platnik' ? 'pracownik_zus' : 'platnik'
+    setUserRole(newRole)
+    // Automatycznie przełącz widok
+    if (newRole === 'pracownik_zus') {
+      setCurrentView('zus-panel')
+    } else {
+      setCurrentView('dashboard')
+    }
+  }
+
+  const handleVerifyForm = (formId: number) => {
+    setSelectedFormId(formId)
+    setCurrentView('verification')
+  }
+
+  const handleBackToPanel = () => {
+    setCurrentView('zus-panel')
+    setSelectedFormId(null)
+  }
+
+  const handleApproveForm = (formId: number) => {
+    console.log('Zaakceptowano formularz:', formId)
+    handleBackToPanel()
+  }
+
+  const handleRejectForm = (formId: number) => {
+    console.log('Odrzucono formularz:', formId)
+    handleBackToPanel()
+  }
+
   return (
     <div className="app">
       {/* Top Header Bar */}
@@ -155,11 +194,27 @@ function App() {
 
           <div className="header-right">
             <span className="header-user-info">
-              Płatnik: Jan Kowalski Usługi Budowlane, NIP: 1234567890
+              {userRole === 'platnik' 
+                ? 'Płatnik: Jan Kowalski Usługi Budowlane, NIP: 1234567890'
+                : 'Pracownik ZUS: Anna Nowak, ID: ZUS-12345'
+              }
             </span>
+            
+            {/* Przycisk przełączania trybu */}
+            <button 
+              className="btn-role-switch" 
+              onClick={toggleUserRole}
+              title={`Przełącz na: ${userRole === 'platnik' ? 'Pracownik ZUS' : 'Płatnik'}`}
+            >
+              <SwitchIcon />
+              <span className="role-label">
+                {userRole === 'platnik' ? 'Płatnik' : 'ZUS'}
+              </span>
+            </button>
+
             <button className="header-notification">
               <BellIcon />
-              <span className="notification-badge">1</span>
+              <span className="notification-badge">{userRole === 'pracownik_zus' ? '5' : '1'}</span>
             </button>
             <button className="header-avatar">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -178,7 +233,11 @@ function App() {
       {/* Main Navigation */}
       <nav className="main-nav">
         <div className="main-nav-content">
-          <a href="#" className="main-nav-item" onClick={() => setCurrentView('dashboard')}>
+          <a 
+            href="#" 
+            className={`main-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setCurrentView('dashboard')}
+          >
             <DashboardIcon />
             <span>Pulpit</span>
           </a>
@@ -186,7 +245,11 @@ function App() {
             <DocumentIcon />
             <span>Dokumenty ZUS</span>
           </a>
-          <a href="#" className={`main-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}>
+          <a 
+            href="#" 
+            className={`main-nav-item ${currentView === 'zus-panel' || currentView === 'form' || currentView === 'verification' ? 'active' : ''}`}
+            onClick={() => userRole === 'pracownik_zus' ? setCurrentView('zus-panel') : null}
+          >
             <AccidentIcon />
             <span>Wypadki przy pracy</span>
           </a>
@@ -202,13 +265,46 @@ function App() {
             <SettingsIcon />
             <span>Ustawienia</span>
           </a>
+
+          {/* Przełącznik widoku formularza - tylko gdy jesteśmy w formularzu */}
+          {currentView === 'form' && (
+            <div className="nav-form-switch" onClick={(e) => e.stopPropagation()}>
+              <button 
+                type="button"
+                className={`nav-mode-btn ${formMode === 'step-by-step' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setFormMode('step-by-step')
+                }}
+                title="Widok krokowy - jedno pole na raz"
+              >
+                <ListIcon />
+                <span>Krok po kroku</span>
+              </button>
+              <button 
+                type="button"
+                className={`nav-mode-btn ${formMode === 'classic' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setFormMode('classic')
+                }}
+                title="Widok klasyczny - wszystkie pola widoczne"
+              >
+                <LayoutGridIcon />
+                <span>Klasyczny</span>
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Page Content */}
       <main className="main-content">
         <div className="content-container">
-          {currentView === 'dashboard' ? (
+          {/* Widok Dashboard Płatnika */}
+          {currentView === 'dashboard' && userRole === 'platnik' && (
             <>
               <h1 className="page-title">Zgłoszenia wypadków przy pracy</h1>
 
@@ -296,13 +392,52 @@ function App() {
                 )}
               </div>
             </>
-          ) : (
+          )}
+
+          {/* Widok Dashboard Pracownika ZUS */}
+          {currentView === 'dashboard' && userRole === 'pracownik_zus' && (
+            <>
+              <h1 className="page-title">Panel Pracownika ZUS</h1>
+              <div className="info-box">
+                <p>Witaj w panelu pracownika ZUS. Kliknij <strong>"Wypadki przy pracy"</strong> w menu, aby przejść do recenzji formularzy.</p>
+              </div>
+            </>
+          )}
+
+          {/* Widok Panel Pracownika ZUS */}
+          {currentView === 'zus-panel' && userRole === 'pracownik_zus' && (
+            <PanelPracownikaZUS onVerifyForm={handleVerifyForm} />
+          )}
+
+          {/* Widok Weryfikacji pojedynczego zgłoszenia */}
+          {currentView === 'verification' && userRole === 'pracownik_zus' && selectedFormId && (
+            <WidokWeryfikacji 
+              formId={selectedFormId}
+              onBack={handleBackToPanel}
+              onApprove={handleApproveForm}
+              onReject={handleRejectForm}
+            />
+          )}
+
+          {/* Widok Formularza */}
+          {currentView === 'form' && (
             <>
               <h1 className="page-title">Dane poszkodowanego</h1>
               <FormularzPoszkodowanego
                 onSubmit={handleSubmitForm}
                 onCancel={handleCancelForm}
               />
+              {formMode === 'step-by-step' ? (
+                <FormularzKrokowy 
+                  onSubmit={handleSubmitForm}
+                  onCancel={handleCancelForm}
+                />
+              ) : (
+                <FormularzPoszkodowanego 
+                  onSubmit={handleSubmitForm}
+                  onCancel={handleCancelForm}
+                />
+              )}
             </>
           )}
         </div>
