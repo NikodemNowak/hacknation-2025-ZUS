@@ -52,36 +52,36 @@ const rodzajeDokomentow = [
 // Ikony
 const UserIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
   </svg>
 )
 
 const DocumentIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14,2 14,8 20,8"/>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14,2 14,8 20,8" />
   </svg>
 )
 
 const HomeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9,22 9,12 15,12 15,22"/>
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9,22 9,12 15,12 15,22" />
   </svg>
 )
 
 const ArrowLeftIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="19" y1="12" x2="5" y2="12"/>
-    <polyline points="12,19 5,12 12,5"/>
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12,19 5,12 12,5" />
   </svg>
 )
 
 const ArrowRightIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="5" y1="12" x2="19" y2="12"/>
-    <polyline points="12,5 19,12 12,19"/>
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12,5 19,12 12,19" />
   </svg>
 )
 
@@ -118,8 +118,13 @@ interface ExtendedFormData extends Poszkodowany {
   okolicznosci_wypadku: string
   przyczyny_wypadku: string
   sekwencja_zdarzen: string
+
   opis_miejsca_wypadku: string
   czy_wypadek_podczas_obslugi_maszyn: boolean
+  nazwa_maszyny?: string
+  producent_maszyny?: string
+  rok_produkcji_maszyny?: string
+  numer_seryjny_maszyny?: string
   czy_stosowane_zabezpieczenia: boolean
   rodzaj_srodkow_ochrony?: string
   czy_srodki_wlasciwe_i_sprawne?: boolean
@@ -156,6 +161,10 @@ const extendedInitialFormData: ExtendedFormData = {
   sekwencja_zdarzen: '',
   opis_miejsca_wypadku: '',
   czy_wypadek_podczas_obslugi_maszyn: false,
+  nazwa_maszyny: '',
+  producent_maszyny: '',
+  rok_produkcji_maszyny: '',
+  numer_seryjny_maszyny: '',
   czy_stosowane_zabezpieczenia: false,
   czy_stosowana_asekuracja: false,
   czy_praca_do_wykonania_samodzielnie: true,
@@ -184,15 +193,29 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    
+
     if (name.startsWith('adres_zamieszkania_')) {
       const adresField = name.replace('adres_zamieszkania_', '')
-      setFormData(prev => ({
-        ...prev,
-        adres_zamieszkania: {
+      setFormData(prev => {
+        const newAdresZamieszkania = {
           ...prev.adres_zamieszkania,
           [adresField]: value
         }
+        return {
+          ...prev,
+          adres_zamieszkania: newAdresZamieszkania,
+          adres_korespondencyjny: prev.adres_korespondencyjny_taki_sam
+            ? { ...newAdresZamieszkania }
+            : prev.adres_korespondencyjny
+        }
+      })
+    } else if (name === 'adres_korespondencyjny_taki_sam') {
+      const isSame = value === 'tak'
+      setFormData(prev => ({
+        ...prev,
+        adres_korespondencyjny_taki_sam: isSame,
+        // Jeśli zaznaczono "tak", skopiuj dane z adresu zamieszkania, w przeciwnym razie zachowaj obecne (lub wyczyść przy pierwszej zmianie)
+        adres_korespondencyjny: isSame ? { ...prev.adres_zamieszkania } : prev.adres_korespondencyjny
       }))
     } else if (name.startsWith('adres_korespondencyjny_')) {
       const adresField = name.replace('adres_korespondencyjny_', '')
@@ -209,13 +232,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
           [adresField]: value
         }
       }))
-    } else if (name === 'adres_korespondencyjny_taki_sam') {
-      const isSame = value === 'tak'
-      setFormData(prev => ({
-        ...prev,
-        adres_korespondencyjny_taki_sam: isSame,
-        adres_korespondencyjny: isSame ? { ...prev.adres_zamieszkania } : prev.adres_korespondencyjny
-      }))
+
     } else if (name.startsWith('dzialalnosc_')) {
       const fieldName = name.replace('dzialalnosc_', '')
       if (fieldName.startsWith('adres_siedziby_')) {
@@ -265,7 +282,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
           }
         }))
       }
-    } else if (name.startsWith('czy_') || name === 'adres_korespondencyjny_taki_sam') {
+    } else if (name.startsWith('czy_')) {
       setFormData(prev => ({
         ...prev,
         [name]: value === 'tak' || value === 'nie' ? (value === 'tak') : value
@@ -278,6 +295,8 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
     }
   }
 
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (onSubmit) {
@@ -286,6 +305,12 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
   }
 
   const nextStep = () => {
+    const form = document.querySelector('form')
+    if (form && !form.checkValidity()) {
+      form.reportValidity()
+      return
+    }
+
     if (currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1)
     }
@@ -345,7 +370,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <UserIcon />
               <h2>Dane osobowe poszkodowanego</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="pesel">
@@ -450,7 +475,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <DocumentIcon />
               <h2>Dokument tożsamości</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group form-group-full">
                 <label htmlFor="rodzaj_dokumentu">
@@ -511,7 +536,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <HomeIcon />
               <h2>Adres zamieszkania</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="adres_zamieszkania_ulica">
@@ -598,7 +623,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <HomeIcon />
               <h2>Adres korespondencyjny</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group form-group-full">
                 <label htmlFor="adres_korespondencyjny_taki_sam">
@@ -708,7 +733,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <DocumentIcon />
               <h2>Działalność</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="dzialalnosc_nip_regon">
@@ -882,7 +907,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <DocumentIcon />
               <h2>Opis sytuacji</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group form-group-full">
                 <label htmlFor="opis_okolicznosci">
@@ -940,7 +965,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               <DocumentIcon />
               <h2>Zapis wyjaśnień poszkodowanego</h2>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="data_wypadku">
@@ -1110,7 +1135,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
                 <select
                   id="czy_wypadek_podczas_obslugi_maszyn"
                   name="czy_wypadek_podczas_obslugi_maszyn"
-                  value={formData.czy_wypadek_podczas_obslugi_maszyn ? 'tak' : formData.czy_wypadek_podczas_obslugi_maszyn === false ? 'nie' : ''}
+                  value={formData.czy_wypadek_podczas_obslugi_maszyn === true ? 'tak' : formData.czy_wypadek_podczas_obslugi_maszyn === false ? 'nie' : formData.czy_wypadek_podczas_obslugi_maszyn === 'tak' ? 'tak' : formData.czy_wypadek_podczas_obslugi_maszyn === 'nie' ? 'nie' : ''}
                   onChange={handleChange}
                   required
                 >
@@ -1124,7 +1149,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_stosowane_zabezpieczenia">
-                  Czy stosowane zabezpieczenia przed wypadkiem? <span className="required">*</span>
+                  Czy były stosowane zabezpieczenia przed wypadkiem? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_stosowane_zabezpieczenia"
@@ -1179,7 +1204,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_stosowana_asekuracja">
-                  Czy stosowana asekuracja podczas pracy? <span className="required">*</span>
+                  Czy była stosowana asekuracja podczas pracy? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_stosowana_asekuracja"
@@ -1236,7 +1261,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_przestrzegane_zasady_bhp">
-                  Czy przestrzegane zasady BHP? <span className="required">*</span>
+                  Czy były przestrzegane zasady BHP? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_przestrzegane_zasady_bhp"
@@ -1255,7 +1280,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_posiada_przygotowanie">
-                  Czy posiadane przygotowanie do wykonywania zadań? <span className="required">*</span>
+                  Czy poszkodowany posiadał przygotowanie do wykonywania zadań? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_posiada_przygotowanie"
@@ -1274,7 +1299,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_odbyte_szkolenia_bhp">
-                  Czy odbyte szkolenia BHP? <span className="required">*</span>
+                  Czy poszkodowany odbył szkolenia BHP? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_odbyte_szkolenia_bhp"
@@ -1293,7 +1318,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_opracowana_ocena_ryzyka">
-                  Czy opracowana ocena ryzyka zawodowego? <span className="required">*</span>
+                  Czy została opracowana ocena ryzyka zawodowego? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_opracowana_ocena_ryzyka"
@@ -1326,7 +1351,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_stan_nietrzezwosci">
-                  Czy w chwili wypadku w stanie nietrzeźwości? <span className="required">*</span>
+                  Czy w chwili wypadku poszkodowany był w stanie nietrzeźwości? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_stan_nietrzezwosci"
@@ -1345,7 +1370,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_pod_wplywem_srodkow">
-                  Czy pod wpływem środków odurzających? <span className="required">*</span>
+                  Czy poszkodowany był pod wpływem środków odurzających? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_pod_wplywem_srodkow"
@@ -1364,7 +1389,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_badany_stan_trzezwosci">
-                  Czy w dniu wypadku badany stan trzeźwości? <span className="required">*</span>
+                  Czy w dniu wypadku został zbadany stan trzeźwości? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_badany_stan_trzezwosci"
@@ -1399,7 +1424,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
               <div className="form-group form-group-full">
                 <label htmlFor="czy_prowadzone_postepowania">
-                  Czy podjęte czynności przez organy kontroli? <span className="required">*</span>
+                  Czy zostały podjęte czynności przez organy kontroli? <span className="required">*</span>
                 </label>
                 <select
                   id="czy_prowadzone_postepowania"
@@ -1447,7 +1472,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               </button>
             )}
           </div>
-          
+
           <div className="form-actions-right">
             {currentStep > 1 && (
               <button type="button" className="btn-outline" onClick={prevStep}>
@@ -1455,7 +1480,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
                 Wstecz
               </button>
             )}
-            
+
             {currentStep < totalSteps ? (
               <button type="button" className="btn-primary" onClick={nextStep}>
                 Dalej

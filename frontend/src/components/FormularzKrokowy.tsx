@@ -34,15 +34,15 @@ interface FormData {
   adres_zamieszkania: Adres
   adres_korespondencyjny?: Adres
   adres_korespondencyjny_taki_sam?: boolean
-  
+
   // Działalność
   dzialalnosc?: Dzialalnosc
-  
+
   // Opis sytuacji
   opis_okolicznosci: string
   przyczyna_zewnetrzna: string
   zwiazek_z_praca: string
-  
+
   // Zapis wyjaśnień poszkodowanego
   data_wypadku: string
   godzina_wypadku: string
@@ -56,6 +56,10 @@ interface FormData {
   sekwencja_zdarzen: string
   opis_miejsca_wypadku: string
   czy_wypadek_podczas_obslugi_maszyn: boolean
+  nazwa_maszyny?: string
+  producent_maszyny?: string
+  rok_produkcji_maszyny?: string
+  numer_seryjny_maszyny?: string
   czy_stosowane_zabezpieczenia: boolean
   rodzaj_srodkow_ochrony?: string
   czy_srodki_wlasciwe_i_sprawne?: boolean
@@ -107,6 +111,10 @@ const initialFormData: FormData = {
   sekwencja_zdarzen: '',
   opis_miejsca_wypadku: '',
   czy_wypadek_podczas_obslugi_maszyn: false,
+  nazwa_maszyny: '',
+  producent_maszyny: '',
+  rok_produkcji_maszyny: '',
+  numer_seryjny_maszyny: '',
   czy_stosowane_zabezpieczenia: false,
   czy_stosowana_asekuracja: false,
   czy_praca_do_wykonania_samodzielnie: true,
@@ -137,23 +145,19 @@ const takNieOptions = [
 ]
 
 // Ikony
-const CheckIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-    <polyline points="20,6 9,17 4,12"/>
-  </svg>
-)
+
 
 const ArrowRightIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="5" y1="12" x2="19" y2="12"/>
-    <polyline points="12,5 19,12 12,19"/>
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12,5 19,12 12,19" />
   </svg>
 )
 
 const ArrowLeftIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="19" y1="12" x2="5" y2="12"/>
-    <polyline points="12,19 5,12 12,5"/>
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12,19 5,12 12,5" />
   </svg>
 )
 
@@ -167,6 +171,7 @@ interface Field {
   options?: { value: string; label: string }[]
   hint?: string
   skipIf?: (formData: FormData) => boolean
+  optional?: boolean
 }
 
 interface Section {
@@ -221,46 +226,46 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
         title: 'Adres korespondencyjny',
         icon: '',
         fields: [
-          { 
-            name: 'adres_korespondencyjny_taki_sam', 
-            label: 'Czy adres korespondencyjny jest taki sam jak adres zamieszkania?', 
-            type: 'select', 
-            options: takNieOptions 
+          {
+            name: 'adres_korespondencyjny_taki_sam',
+            label: 'Czy adres korespondencyjny jest taki sam jak adres zamieszkania?',
+            type: 'select',
+            options: takNieOptions
           },
-          { 
-            name: 'adres_korespondencyjny.ulica', 
-            label: 'Ulica (korespondencyjny)', 
-            type: 'text', 
+          {
+            name: 'adres_korespondencyjny.ulica',
+            label: 'Ulica (korespondencyjny)',
+            type: 'text',
             placeholder: 'np. Marszałkowska',
-            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true || data.adres_korespondencyjny_taki_sam === 'tak'
+            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true
           },
-          { 
-            name: 'adres_korespondencyjny.nr_domu', 
-            label: 'Numer domu/mieszkania (korespondencyjny)', 
-            type: 'text', 
+          {
+            name: 'adres_korespondencyjny.nr_domu',
+            label: 'Numer domu/mieszkania (korespondencyjny)',
+            type: 'text',
             placeholder: 'np. 10/24',
-            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true || data.adres_korespondencyjny_taki_sam === 'tak'
+            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true
           },
-          { 
-            name: 'adres_korespondencyjny.kod_pocztowy', 
-            label: 'Kod pocztowy (korespondencyjny)', 
-            type: 'text', 
+          {
+            name: 'adres_korespondencyjny.kod_pocztowy',
+            label: 'Kod pocztowy (korespondencyjny)',
+            type: 'text',
             placeholder: 'np. 00-001',
-            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true || data.adres_korespondencyjny_taki_sam === 'tak'
+            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true
           },
-          { 
-            name: 'adres_korespondencyjny.miejscowosc', 
-            label: 'Miejscowość (korespondencyjny)', 
-            type: 'text', 
+          {
+            name: 'adres_korespondencyjny.miejscowosc',
+            label: 'Miejscowość (korespondencyjny)',
+            type: 'text',
             placeholder: 'np. Warszawa',
-            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true || data.adres_korespondencyjny_taki_sam === 'tak'
+            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true
           },
-          { 
-            name: 'adres_korespondencyjny.panstwo', 
-            label: 'Państwo (korespondencyjny)', 
-            type: 'text', 
+          {
+            name: 'adres_korespondencyjny.panstwo',
+            label: 'Państwo (korespondencyjny)',
+            type: 'text',
             placeholder: 'np. Polska',
-            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true || data.adres_korespondencyjny_taki_sam === 'tak'
+            skipIf: (data) => data.adres_korespondencyjny_taki_sam === true
           }
         ]
       },
@@ -270,15 +275,15 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
         fields: [
           { name: 'dzialalnosc.nip_regon', label: 'NIP lub REGON', type: 'text', placeholder: 'np. 1234567890', hint: 'NIP: 10 cyfr, REGON: 9 lub 14 cyfr' },
           { name: 'dzialalnosc.nazwa_firmy', label: 'Nazwa firmy/działalności', type: 'text', placeholder: 'np. Firma Budowlana Kowalski', minLength: 2 },
-          { name: 'dzialalnosc.kod_pkd', label: 'Kod PKD (opcjonalnie)', type: 'text', placeholder: 'np. 43.99.Z' },
+          { name: 'dzialalnosc.kod_pkd', label: 'Kod PKD (opcjonalnie)', type: 'text', placeholder: 'np. 43.99.Z', optional: true },
           { name: 'dzialalnosc.adres_siedziby.ulica', label: 'Ulica siedziby', type: 'text', placeholder: 'np. Marszałkowska' },
           { name: 'dzialalnosc.adres_siedziby.nr_domu', label: 'Numer domu siedziby', type: 'text', placeholder: 'np. 10/24' },
           { name: 'dzialalnosc.adres_siedziby.kod_pocztowy', label: 'Kod pocztowy siedziby', type: 'text', placeholder: 'np. 00-001' },
           { name: 'dzialalnosc.adres_siedziby.miejscowosc', label: 'Miejscowość siedziby', type: 'text', placeholder: 'np. Warszawa' },
           { name: 'dzialalnosc.adres_siedziby.panstwo', label: 'Państwo siedziby', type: 'text', placeholder: 'np. Polska' },
-          { name: 'dzialalnosc.numer_telefonu', label: 'Numer telefonu firmy (opcjonalnie)', type: 'tel', placeholder: 'np. +48 123 456 789' },
-          { name: 'dzialalnosc.licencje', label: 'Licencje (opcjonalnie)', type: 'textarea', placeholder: 'Opisz posiadane licencje' },
-          { name: 'dzialalnosc.koncesje', label: 'Koncesje (opcjonalnie)', type: 'textarea', placeholder: 'Opisz posiadane koncesje' }
+          { name: 'dzialalnosc.numer_telefonu', label: 'Numer telefonu firmy (opcjonalnie)', type: 'tel', placeholder: 'np. +48 123 456 789', optional: true },
+          { name: 'dzialalnosc.licencje', label: 'Licencje (opcjonalnie)', type: 'textarea', placeholder: 'Opisz posiadane licencje', optional: true },
+          { name: 'dzialalnosc.koncesje', label: 'Koncesje (opcjonalnie)', type: 'textarea', placeholder: 'Opisz posiadane koncesje', optional: true }
         ]
       },
       {
@@ -306,22 +311,26 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
           { name: 'sekwencja_zdarzen', label: 'Sekwencja zdarzeń', type: 'textarea', placeholder: 'Co się działo kolejno, jakie fakty doprowadziły do urazu' },
           { name: 'opis_miejsca_wypadku', label: 'Opis miejsca wypadku', type: 'textarea', placeholder: 'Warunki, stan podłogi, oświetlenie itp.' },
           { name: 'czy_wypadek_podczas_obslugi_maszyn', label: 'Czy wypadek powstał podczas obsługi maszyn/urządzeń?', type: 'select', options: takNieOptions },
-          { name: 'czy_stosowane_zabezpieczenia', label: 'Czy stosowane zabezpieczenia przed wypadkiem?', type: 'select', options: takNieOptions },
-          { name: 'rodzaj_srodkow_ochrony', label: 'Rodzaj środków ochrony (jeśli tak)', type: 'text', placeholder: 'np. buty, kask, odzież ochronna', skipIf: (data) => data.czy_stosowane_zabezpieczenia === false || data.czy_stosowane_zabezpieczenia === 'nie' },
-          { name: 'czy_srodki_wlasciwe_i_sprawne', label: 'Czy środki były właściwe i sprawne?', type: 'select', options: takNieOptions, skipIf: (data) => data.czy_stosowane_zabezpieczenia === false || data.czy_stosowane_zabezpieczenia === 'nie' },
-          { name: 'czy_stosowana_asekuracja', label: 'Czy stosowana asekuracja podczas pracy?', type: 'select', options: takNieOptions },
+          { name: 'nazwa_maszyny', label: 'Nazwa maszyny/urządzenia', type: 'text', placeholder: 'np. Tokarka CNC', skipIf: (data) => data.czy_wypadek_podczas_obslugi_maszyn === false },
+          { name: 'producent_maszyny', label: 'Producent', type: 'text', placeholder: 'np. Producent XYZ', skipIf: (data) => data.czy_wypadek_podczas_obslugi_maszyn === false },
+          { name: 'rok_produkcji_maszyny', label: 'Rok produkcji', type: 'text', placeholder: 'np. 2018', skipIf: (data) => data.czy_wypadek_podczas_obslugi_maszyn === false },
+          { name: 'numer_seryjny_maszyny', label: 'Numer seryjny (opcjonalnie)', type: 'text', placeholder: 'np. SN12345678', skipIf: (data) => data.czy_wypadek_podczas_obslugi_maszyn === false, optional: true },
+          { name: 'czy_stosowane_zabezpieczenia', label: 'Czy były stosowane zabezpieczenia przed wypadkiem?', type: 'select', options: takNieOptions },
+          { name: 'rodzaj_srodkow_ochrony', label: 'Rodzaj środków ochrony (jeśli tak)', type: 'text', placeholder: 'np. buty, kask, odzież ochronna', skipIf: (data) => data.czy_stosowane_zabezpieczenia === false },
+          { name: 'czy_srodki_wlasciwe_i_sprawne', label: 'Czy środki były właściwe i sprawne?', type: 'select', options: takNieOptions, skipIf: (data) => data.czy_stosowane_zabezpieczenia === false },
+          { name: 'czy_stosowana_asekuracja', label: 'Czy była stosowana asekuracja podczas pracy?', type: 'select', options: takNieOptions },
           { name: 'czy_praca_do_wykonania_samodzielnie', label: 'Czy pracę można było wykonywać samodzielnie?', type: 'select', options: takNieOptions },
           { name: 'czy_wymagane_min_2_osoby', label: 'Czy pracę musiały wykonywać co najmniej dwie osoby?', type: 'select', options: takNieOptions },
-          { name: 'czy_przestrzegane_zasady_bhp', label: 'Czy przestrzegane zasady BHP?', type: 'select', options: takNieOptions },
-          { name: 'czy_posiada_przygotowanie', label: 'Czy posiadane przygotowanie do wykonywania zadań?', type: 'select', options: takNieOptions },
-          { name: 'czy_odbyte_szkolenia_bhp', label: 'Czy odbyte szkolenia BHP?', type: 'select', options: takNieOptions },
-          { name: 'czy_opracowana_ocena_ryzyka', label: 'Czy opracowana ocena ryzyka zawodowego?', type: 'select', options: takNieOptions },
-          { name: 'srodki_zmniejszajace_ryzyko', label: 'Środki zmniejszające ryzyko (opcjonalnie)', type: 'textarea', placeholder: 'Opisz środki stosowane w celu zmniejszenia ryzyka' },
-          { name: 'czy_stan_nietrzezwosci', label: 'Czy w chwili wypadku w stanie nietrzeźwości?', type: 'select', options: takNieOptions },
-          { name: 'czy_pod_wplywem_srodkow', label: 'Czy pod wpływem środków odurzających?', type: 'select', options: takNieOptions },
-          { name: 'czy_badany_stan_trzezwosci', label: 'Czy w dniu wypadku badany stan trzeźwości?', type: 'select', options: takNieOptions },
-          { name: 'przez_kogo_badany', label: 'Przez kogo badany stan trzeźwości? (jeśli tak)', type: 'text', placeholder: 'np. policja', skipIf: (data) => data.czy_badany_stan_trzezwosci === false || data.czy_badany_stan_trzezwosci === 'nie' },
-          { name: 'czy_prowadzone_postepowania', label: 'Czy podjęte czynności przez organy kontroli?', type: 'select', options: takNieOptions },
+          { name: 'czy_przestrzegane_zasady_bhp', label: 'Czy były przestrzegane zasady BHP?', type: 'select', options: takNieOptions },
+          { name: 'czy_posiada_przygotowanie', label: 'Czy poszkodowany posiadał przygotowanie do wykonywania zadań?', type: 'select', options: takNieOptions },
+          { name: 'czy_odbyte_szkolenia_bhp', label: 'Czy poszkodowany odbył szkolenia BHP?', type: 'select', options: takNieOptions },
+          { name: 'czy_opracowana_ocena_ryzyka', label: 'Czy została opracowana ocena ryzyka zawodowego?', type: 'select', options: takNieOptions },
+          { name: 'srodki_zmniejszajace_ryzyko', label: 'Środki zmniejszające ryzyko (opcjonalnie)', type: 'textarea', placeholder: 'Opisz środki stosowane w celu zmniejszenia ryzyka', optional: true },
+          { name: 'czy_stan_nietrzezwosci', label: 'Czy w chwili wypadku poszkodowany był w stanie nietrzeźwości?', type: 'select', options: takNieOptions },
+          { name: 'czy_pod_wplywem_srodkow', label: 'Czy poszkodowany był pod wpływem środków odurzających?', type: 'select', options: takNieOptions },
+          { name: 'czy_badany_stan_trzezwosci', label: 'Czy w dniu wypadku został zbadany stan trzeźwości?', type: 'select', options: takNieOptions },
+          { name: 'przez_kogo_badany', label: 'Przez kogo badany stan trzeźwości? (jeśli tak)', type: 'text', placeholder: 'np. policja', skipIf: (data) => data.czy_badany_stan_trzezwosci === false },
+          { name: 'czy_prowadzone_postepowania', label: 'Czy zostały podjęte czynności przez organy kontroli?', type: 'select', options: takNieOptions },
           { name: 'czy_na_zwolnieniu_w_dniu_wypadku', label: 'Czy w dniu wypadku przebywał na zwolnieniu lekarskim?', type: 'select', options: takNieOptions }
         ]
       }
@@ -374,7 +383,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
     if (fieldName.includes('.')) {
       const parts = fieldName.split('.')
       let value: any = formData
-      
+
       for (const part of parts) {
         if (value && typeof value === 'object' && part in value) {
           value = value[part]
@@ -382,13 +391,13 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
           return ''
         }
       }
-      
+
       if (typeof value === 'boolean') {
         return value ? 'tak' : 'nie'
       }
       return value || ''
     }
-    
+
     const val = formData[fieldName as keyof FormData]
     if (typeof val === 'boolean') {
       return val ? 'tak' : 'nie'
@@ -402,7 +411,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       setFormData(prev => {
         const newData = { ...prev }
         let current: any = newData
-        
+
         for (let i = 0; i < parts.length - 1; i++) {
           const part = parts[i]
           if (!current[part]) {
@@ -410,14 +419,14 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
           }
           current = current[part]
         }
-        
+
         const lastPart = parts[parts.length - 1]
         if (value === 'tak' || value === 'nie') {
           current[lastPart] = value === 'tak'
         } else {
           current[lastPart] = value
         }
-        
+
         return newData
       })
     } else {
@@ -429,7 +438,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   }
 
   const handleNext = () => {
-    if (!inputValue.trim() && currentField.type !== 'select' && currentField.type !== 'date' && currentField.type !== 'time') {
+    if (!currentField.optional && !inputValue.trim() && currentField.type !== 'select' && currentField.type !== 'date' && currentField.type !== 'time') {
       return
     }
 
@@ -482,8 +491,8 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   }
 
   const isFirstField = currentSectionIndex === 0 && currentFieldIndex === 0
-  const isLastField = 
-    currentSectionIndex === sections.length - 1 && 
+  const isLastField =
+    currentSectionIndex === sections.length - 1 &&
     currentFieldIndex === totalFields - 1
 
   return (
@@ -492,7 +501,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       <div className="sections-indicator">
         {sections.map((section, index) => (
           <>
-            <div 
+            <div
               key={index}
               className={`progress-step ${index === currentSectionIndex ? 'active' : ''} ${index < currentSectionIndex ? 'completed' : ''}`}
             >
@@ -507,8 +516,8 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       {/* Progress bar dla aktualnej sekcji */}
       <div className="progress-container">
         <div className="progress-bar">
-          <div 
-            className="progress-fill" 
+          <div
+            className="progress-fill"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
@@ -521,7 +530,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       <div className={`form-krokowy-content ${animationClass}`}>
         <label className="field-label">
           {currentField.label}
-          <span className="required-indicator">*</span>
+          {!currentField.optional && <span className="required-indicator">*</span>}
         </label>
 
         {currentField.type === 'select' ? (
@@ -578,8 +587,8 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       <div className="form-krokowy-actions">
         <div className="actions-left">
           {onCancel && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-cancel"
               onClick={onCancel}
             >
@@ -590,8 +599,8 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
 
         <div className="actions-right">
           {!isFirstField && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-nav btn-prev"
               onClick={handlePrevious}
             >
@@ -600,11 +609,11 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
             </button>
           )}
 
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-nav btn-next"
             onClick={handleNext}
-            disabled={!inputValue.trim() && currentField.type !== 'date' && currentField.type !== 'time' && currentField.type !== 'select'}
+            disabled={!currentField.optional && !inputValue.trim() && currentField.type !== 'date' && currentField.type !== 'time' && currentField.type !== 'select'}
           >
             <span>{isLastField ? 'Zakończ' : 'Dalej'}</span>
             <ArrowRightIcon />
