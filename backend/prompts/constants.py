@@ -95,25 +95,8 @@ AI_EXTRACT_KEYS = [
     "przyczyny_wypadku",
     "sekwencja_zdarzen",
     "opis_miejsca_wypadku",
-
     "rodzaj_urazow",
-    "pomoc_medyczna",
-
-    "czy_wypadek_podczas_obslugi_maszyn",
-    "informacje_o_maszynie",
-
-    "czy_stosowane_zabezpieczenia",
-    "rodzaj_srodkow_ochrony",
-    "czy_srodki_wlasciwe_i_sprawne",
-    "czy_przestrzegane_zasady_bhp",
-
-    "czy_stosowana_asekuracja",
-    "czy_praca_do_wykonania_samodzielnie",
-
-    "swiadkowie",
-    "czy_badany_stan_trzeźwosci",
-    "przez_kogo_badany",
-    "czy_prowadzone_postepowania"
+    "swiadkowie"
 ]
 
 CHECKLISTA_PYTAN = {
@@ -122,25 +105,8 @@ CHECKLISTA_PYTAN = {
     "przyczyny_wypadku": "Co było bezpośrednią przyczyną? (np. poślizgnięcie, awaria maszyny, upadek przedmiotu, przyczyna zewnętrzna)",
     "sekwencja_zdarzen": "Opis krok po kroku: co działo się bezpośrednio przed, w trakcie i po wypadku.",
     "opis_miejsca_wypadku": "Warunki w miejscu wypadku (np. oświetlenie, stan nawierzchni, pogoda - jeśli na zewnątrz).",
-
     "rodzaj_urazow": "Jakich obrażeń doznał poszkodowany? (np. złamanie, stłuczenie, rana cięta).",
-    "pomoc_medyczna": "Czy udzielono pierwszej pomocy? Czy wezwano pogotowie? Czy poszkodowany trafił do szpitala?",
-
-    "czy_wypadek_podczas_obslugi_maszyn": "Czy wypadek wydarzył się podczas pracy z maszyną lub urządzeniem technicznym? (Tak/Nie)",
-    "informacje_o_maszynie": "Jeśli była maszyna: czy była sprawna? Czy posiadała osłony? Jaka to maszyna?",
-
-    "czy_stosowane_zabezpieczenia": "Czy stosowano środki ochrony zbiorowej lub indywidualnej?",
-    "rodzaj_srodkow_ochrony": "Jakie konkretnie środki ochrony miał poszkodowany? (kask, buty, okulary, rękawice).",
-    "czy_srodki_wlasciwe_i_sprawne": "Czy te środki były sprawne i odpowiednie do zagrożenia?",
-    "czy_przestrzegane_zasady_bhp": "Czy praca była wykonywana zgodnie z przepisami BHP?",
-
-    "czy_stosowana_asekuracja": "Czy ktoś asekurował poszkodowanego? (jeśli praca tego wymagała).",
-    "czy_praca_do_wykonania_samodzielnie": "Czy tę pracę można było wykonywać w pojedynkę, czy wymagała zespołu?",
-
-    "swiadkowie": "Czy byli naoczni świadkowie zdarzenia? (Jeśli tak - imiona i nazwiska).",
-    "czy_badany_stan_trzeźwosci": "Czy sprawdzono trzeźwość poszkodowanego po wypadku?",
-    "przez_kogo_badany": "Kto przeprowadził badanie trzeźwości? (np. Policja, pracodawca, szpital).",
-    "czy_prowadzone_postepowania": "Czy na miejscu była Policja, Prokurator lub Inspekcja Pracy?"
+    "swiadkowie": "Czy byli naoczni świadkowie zdarzenia? (Jeśli tak - imiona i nazwiska)."
 }
 
 def get_flat_checklist_keys():
