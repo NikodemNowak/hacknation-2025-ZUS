@@ -22,7 +22,7 @@ app.add_middleware(
 
 app.include_router(poszkodowani_router, prefix=settings.api_prefix)
 app.include_router(adres_router, prefix=settings.api_prefix)
-app.include_router(event_description_router, prefix=settings.api_prefix + "/event-description", tags=["Event Description"])
+app.include_router(event_description_router, prefix=settings.api_prefix )
 
 
 @app.get("/")

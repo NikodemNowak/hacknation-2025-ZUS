@@ -11,7 +11,7 @@ class Dzialalnosc(BaseModel):
     """
     nip_regon: str = Field(..., description="NIP (10 cyfr) lub REGON (9 lub 14 cyfr)")
     nazwa_firmy: str = Field(..., min_length=2, description="Nazwa firmy/działalności")
-    kod_pkd: Optional[str] = Field(None, description="Kod PKD działalności (można pobrać z CEIDG)")
+    kod_pkd: str = Field(None, description="Kod PKD działalności (można pobrać z CEIDG)")
     adres_siedziby: Adres = Field(..., description="Adres siedziby firmy/prowadzenia działalności")
     adres_prowadzenia_dzialalnosci: Optional[Adres] = Field(None, description="Adres prowadzenia działalności (jeśli inny niż siedziba)")
     licencje: Optional[str] = Field(None, description="Opis posiadanych licencji (opcjonalnie)")
