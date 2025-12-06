@@ -193,6 +193,78 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
   const totalSteps = 7
   const visibleSteps = 3
 
+  // Dane testowe
+  const testExtendedFormData: ExtendedFormData = {
+    ...extendedInitialFormData, // Zachowaj strukturę początkową jako bazę
+    pesel: '90010112345',
+    rodzaj_dokumentu: 'dowód osobisty',
+    seria_dokumentu: 'ABC',
+    numer_dokumentu: '123456',
+    imie: 'Jan',
+    nazwisko: 'Kowalski',
+    data_urodzenia: '1990-01-01',
+    miejsce_urodzenia: 'Warszawa',
+    numer_telefonu: '123456789',
+    adres_zamieszkania: {
+      ulica: 'Testowa',
+      nr_domu: '1',
+      kod_pocztowy: '00-001',
+      miejscowosc: 'Warszawa',
+      panstwo: 'Polska'
+    },
+    adres_korespondencyjny_taki_sam: true,
+    // Działalność
+    dzialalnosc: {
+      nip_regon: '1234567890',
+      nazwa_firmy: 'Test Firma Sp. z o.o.',
+      kod_pkd: '62.01.Z',
+      adres_siedziby: {
+        ulica: 'Biznesowa',
+        nr_domu: '10',
+        kod_pocztowy: '00-010',
+        miejscowosc: 'Warszawa',
+        panstwo: 'Polska'
+      },
+      numer_telefonu: '987654321',
+      licencje: 'Brak',
+      koncesje: 'Brak'
+    },
+    // Opis
+    opis_okolicznosci: 'Podczas pracy przy komputerze poczułem nagły ból w nadgarstku.',
+    przyczyna_zewnetrzna: 'Przeciążenie',
+    zwiazek_z_praca: 'Tak, podczas wykonywania obowiązków służbowych',
+    // Wyjaśnienia
+    data_wypadku: new Date().toISOString().split('T')[0],
+    godzina_wypadku: '10:00',
+    miejsce_wypadku: 'Biuro, ul. Testowa 1',
+    godzina_rozpoczecia_pracy: '08:00',
+    godzina_zakonczenia_pracy: '16:00',
+    rodzaj_urazow: 'Skręcenie nadgarstka',
+    rodzaj_czynnosci: 'Pisanie na klawiaturze',
+    okolicznosci_wypadku: 'Nagły ból podczas szybkiego pisania raportu',
+    przyczyny_wypadku: 'Niewygodna pozycja, brak przerwy',
+    sekwencja_zdarzen: '1. Rozpoczęcie pracy. 2. Pisanie raportu. 3. Wystąpienie bólu.',
+    opis_miejsca_wypadku: 'Biurko, fotel biurowy, komputer',
+    czy_wypadek_podczas_obslugi_maszyn: false,
+    czy_stosowane_zabezpieczenia: true,
+    czy_stosowana_asekuracja: false,
+    czy_praca_do_wykonania_samodzielnie: true,
+    czy_wymagane_min_2_osoby: false,
+    czy_przestrzegane_zasady_bhp: true,
+    czy_posiada_przygotowanie: true,
+    czy_odbyte_szkolenia_bhp: true,
+    czy_opracowana_ocena_ryzyka: true,
+    czy_stan_nietrzezwosci: false,
+    czy_pod_wplywem_srodkow: false,
+    czy_badany_stan_trzezwosci: false,
+    czy_prowadzone_postepowania: false,
+    czy_na_zwolnieniu_w_dniu_wypadku: false
+  }
+
+  const handleFillTestData = () => {
+    setFormData(testExtendedFormData)
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
 
@@ -349,6 +421,24 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
   return (
     <div className="form-container">
+      {/* Przycisk Debug - Wypełnij danymi */}
+      <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
+        <button
+          type="button"
+          onClick={handleFillTestData}
+          style={{
+            padding: '0.5rem 1rem',
+            background: '#e0e0e0',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '0.9rem'
+          }}
+        >
+          🛠 Wypełnij danymi (Test)
+        </button>
+      </div>
+
       {/* Progress Steps */}
       <div className="form-progress">
         <button

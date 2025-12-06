@@ -187,6 +187,8 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   const [showAiChat, setShowAiChat] = useState(false)
   const [sectionOffset, setSectionOffset] = useState(0)
 
+
+
   const handleAiText = (text: string) => {
     // Append the generated text to the current input
     const newText = inputValue ? `${inputValue} ${text}` : text
@@ -528,6 +530,8 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
 
   return (
     <div className="form-krokowy-container">
+
+
       {/* Wskaźnik wszystkich sekcji */}
       <div className="sections-indicator">
         <button
