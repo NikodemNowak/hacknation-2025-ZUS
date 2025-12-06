@@ -35,27 +35,6 @@ const AccidentIcon = () => (
   </svg>
 )
 
-const MedicalIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-  </svg>
-)
-
-const HelpIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-)
-
-const SettingsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-)
-
 const BellIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -197,12 +176,8 @@ function App() {
   const toggleUserRole = () => {
     const newRole = userRole === 'platnik' ? 'pracownik_zus' : 'platnik'
     setUserRole(newRole)
-    // Automatycznie przełącz widok
-    if (newRole === 'pracownik_zus') {
-      setCurrentView('zus-panel')
-    } else {
-      setCurrentView('dashboard')
-    }
+    // Automatycznie przełącz widok na dashboard
+    setCurrentView('dashboard')
   }
 
   const handleVerifyForm = (formId: number) => {
@@ -292,23 +267,12 @@ function App() {
           <a
             href="#"
             className={`main-nav-item ${currentView === 'zus-panel' || currentView === 'form' || currentView === 'verification' ? 'active' : ''}`}
-            onClick={() => userRole === 'pracownik_zus' ? setCurrentView('zus-panel') : null}
+            onClick={() => userRole === 'pracownik_zus' ? setCurrentView('zus-panel') : setCurrentView('form')}
           >
             <AccidentIcon />
             <span>Wypadki przy pracy</span>
           </a>
-          <a href="#" className="main-nav-item">
-            <MedicalIcon />
-            <span>e-ZLA</span>
-          </a>
-          <a href="#" className="main-nav-item">
-            <HelpIcon />
-            <span>Pomoc</span>
-          </a>
-          <a href="#" className="main-nav-item">
-            <SettingsIcon />
-            <span>Ustawienia</span>
-          </a>
+
 
           {/* Przełącznik widoku formularza - tylko gdy jesteśmy w formularzu */}
           {currentView === 'form' && (
@@ -441,9 +405,36 @@ function App() {
           {/* Widok Dashboard Pracownika ZUS */}
           {currentView === 'dashboard' && userRole === 'pracownik_zus' && (
             <>
-              <h1 className="page-title">Panel Pracownika ZUS</h1>
-              <div className="info-box">
-                <p>Witaj w panelu pracownika ZUS. Kliknij <strong>"Wypadki przy pracy"</strong> w menu, aby przejść do recenzji formularzy.</p>
+              <h1 className="page-title">Pulpit Pracownika ZUS</h1>
+
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: '#e3f2fd', color: '#1976d2' }}>
+                    <ListIcon />
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-value">12</div>
+                    <div className="stat-label">Nowych zgłoszeń</div>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: '#fff3e0', color: '#f57c00' }}>
+                    <LayoutGridIcon />
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-value">5</div>
+                    <div className="stat-label">Do weryfikacji</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card new-report-card" style={{ marginTop: '20px' }}>
+                <h2>Weryfikacja zgłoszeń</h2>
+                <p>Przejdź do listy zgłoszeń oczekujących na weryfikację merytoryczną i formalną.</p>
+                <button className="btn-primary" onClick={() => setCurrentView('zus-panel')}>
+                  PRZEJDŹ DO WERYFIKACJI
+                </button>
               </div>
             </>
           )}
