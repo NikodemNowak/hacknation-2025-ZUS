@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import zusLogo from './assets/zus.svg'
+import FormularzKrokowy from './components/FormularzKrokowy'
 import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
 import PanelPracownikaZUS from './components/PanelPracownikaZUS'
 import WidokWeryfikacji from './components/WidokWeryfikacji'
@@ -337,8 +338,7 @@ function App() {
           {/* Widok Formularza */}
           {currentView === 'form' && (
             <>
-              <h1 className="page-title">Dane poszkodowanego</h1>
-              <FormularzPoszkodowanego 
+              <FormularzKrokowy 
                 onSubmit={handleSubmitForm}
                 onCancel={handleCancelForm}
               />
