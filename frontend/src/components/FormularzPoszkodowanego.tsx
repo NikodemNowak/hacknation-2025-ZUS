@@ -101,7 +101,7 @@ interface Dzialalnosc {
   numer_telefonu?: string
 }
 
-interface ExtendedFormData extends Poszkodowany {
+export interface ExtendedFormData extends Poszkodowany {
   adres_korespondencyjny?: Adres
   adres_korespondencyjny_taki_sam?: boolean
   dzialalnosc?: Dzialalnosc

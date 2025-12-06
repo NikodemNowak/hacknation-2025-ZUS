@@ -5,6 +5,8 @@ import FormularzKrokowy from './components/FormularzKrokowy'
 import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
 import PanelPracownikaZUS from './components/PanelPracownikaZUS'
 import WidokWeryfikacji from './components/WidokWeryfikacji'
+import { submitFullForm } from './services/api'
+import type { ExtendedFormData } from './components/FormularzPoszkodowanego'
 
 // Ikony jako komponenty SVG
 const DashboardIcon = () => (
@@ -76,7 +78,9 @@ const SearchIcon = () => (
 
 const SwitchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
   </svg>
 )
 
@@ -158,6 +162,7 @@ function App() {
       alert('Błąd połączenia z serwerem')
     }
   }
+
   const [userRole, setUserRole] = useState<UserRole>('platnik')
   const [selectedFormId, setSelectedFormId] = useState<number | null>(null)
   const [formMode, setFormMode] = useState<FormMode>('step-by-step')
@@ -170,10 +175,23 @@ function App() {
     setCurrentView('dashboard')
   }
 
-  const handleSubmitForm = (data: unknown) => {
-    console.log('Dane formularza:', data)
-    alert('Dane poszkodowanego zostały zapisane!')
-    setCurrentView('dashboard')
+  const handleSubmitForm = async (data: unknown) => {
+    console.log('Rozpoczynam wysyłanie formularza...', data)
+
+    try {
+      // Wyślij dane do backendu
+      const caseId = await submitFullForm(data as ExtendedFormData)
+
+      console.log(`Sukces! Utworzono sprawę o ID: ${caseId}`)
+      alert(`Sukces! Zgłoszenie zostało wysłane. ID sprawy: ${caseId}`)
+
+      fetchCases() // Odśwież listę na dashboardzie
+      setCurrentView('dashboard')
+
+    } catch (error) {
+      console.error('Błąd wysyłania formularza:', error)
+      alert('Wystąpił błąd podczas wysyłania zgłoszenia. Sprawdź konsolę.')
+    }
   }
 
   const toggleUserRole = () => {
@@ -220,15 +238,15 @@ function App() {
 
           <div className="header-right">
             <span className="header-user-info">
-              {userRole === 'platnik' 
+              {userRole === 'platnik'
                 ? 'Płatnik: Jan Kowalski Usługi Budowlane, NIP: 1234567890'
                 : 'Pracownik ZUS: Anna Nowak, ID: ZUS-12345'
               }
             </span>
-            
+
             {/* Przycisk przełączania trybu */}
-            <button 
-              className="btn-role-switch" 
+            <button
+              className="btn-role-switch"
               onClick={toggleUserRole}
               title={`Przełącz na: ${userRole === 'platnik' ? 'Pracownik ZUS' : 'Płatnik'}`}
             >
@@ -259,8 +277,8 @@ function App() {
       {/* Main Navigation */}
       <nav className="main-nav">
         <div className="main-nav-content">
-          <a 
-            href="#" 
+          <a
+            href="#"
             className={`main-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
             onClick={() => setCurrentView('dashboard')}
           >
@@ -271,8 +289,8 @@ function App() {
             <DocumentIcon />
             <span>Dokumenty ZUS</span>
           </a>
-          <a 
-            href="#" 
+          <a
+            href="#"
             className={`main-nav-item ${currentView === 'zus-panel' || currentView === 'form' || currentView === 'verification' ? 'active' : ''}`}
             onClick={() => userRole === 'pracownik_zus' ? setCurrentView('zus-panel') : null}
           >
@@ -295,7 +313,7 @@ function App() {
           {/* Przełącznik widoku formularza - tylko gdy jesteśmy w formularzu */}
           {currentView === 'form' && (
             <div className="nav-form-switch" onClick={(e) => e.stopPropagation()}>
-              <button 
+              <button
                 type="button"
                 className={`nav-mode-btn ${formMode === 'step-by-step' ? 'active' : ''}`}
                 onClick={(e) => {
@@ -308,7 +326,7 @@ function App() {
                 <ListIcon />
                 <span>Krok po kroku</span>
               </button>
-              <button 
+              <button
                 type="button"
                 className={`nav-mode-btn ${formMode === 'classic' ? 'active' : ''}`}
                 onClick={(e) => {
@@ -437,7 +455,7 @@ function App() {
 
           {/* Widok Weryfikacji pojedynczego zgłoszenia */}
           {currentView === 'verification' && userRole === 'pracownik_zus' && selectedFormId && (
-            <WidokWeryfikacji 
+            <WidokWeryfikacji
               formId={selectedFormId}
               onBack={handleBackToPanel}
               onApprove={handleApproveForm}
@@ -448,13 +466,14 @@ function App() {
           {/* Widok Formularza */}
           {currentView === 'form' && (
             <>
+              <h1 className="page-title">Dane poszkodowanego</h1>
               {formMode === 'step-by-step' ? (
-                <FormularzKrokowy 
+                <FormularzKrokowy
                   onSubmit={handleSubmitForm}
                   onCancel={handleCancelForm}
                 />
               ) : (
-                <FormularzPoszkodowanego 
+                <FormularzPoszkodowanego
                   onSubmit={handleSubmitForm}
                   onCancel={handleCancelForm}
                 />
