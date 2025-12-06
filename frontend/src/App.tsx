@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import './App.css'
 import zusLogo from './assets/zus.svg'
+import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
 
 // Ikony jako komponenty SVG
 const DashboardIcon = () => (
@@ -76,7 +78,25 @@ const recentReports = [
   { id: 3, date: '20.03.2021', employee: 'Janran Kowalski', type: 'Wypadki przy pracy', status: 'draft' },
 ]
 
+type ViewType = 'dashboard' | 'form'
+
 function App() {
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard')
+
+  const handleStartForm = () => {
+    setCurrentView('form')
+  }
+
+  const handleCancelForm = () => {
+    setCurrentView('dashboard')
+  }
+
+  const handleSubmitForm = (data: unknown) => {
+    console.log('Dane formularza:', data)
+    alert('Dane poszkodowanego zostały zapisane!')
+    setCurrentView('dashboard')
+  }
+
   return (
     <div className="app">
       {/* Top Header Bar */}
@@ -113,7 +133,7 @@ function App() {
       {/* Main Navigation */}
       <nav className="main-nav">
         <div className="main-nav-content">
-          <a href="#" className="main-nav-item">
+          <a href="#" className="main-nav-item" onClick={() => setCurrentView('dashboard')}>
             <DashboardIcon />
             <span>Pulpit</span>
           </a>
@@ -121,7 +141,7 @@ function App() {
             <DocumentIcon />
             <span>Dokumenty ZUS</span>
           </a>
-          <a href="#" className="main-nav-item active">
+          <a href="#" className={`main-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}>
             <AccidentIcon />
             <span>Wypadki przy pracy</span>
           </a>
@@ -143,77 +163,89 @@ function App() {
       {/* Page Content */}
       <main className="main-content">
         <div className="content-container">
-          <h1 className="page-title">Zgłoszenia wypadków przy pracy</h1>
+          {currentView === 'dashboard' ? (
+            <>
+              <h1 className="page-title">Zgłoszenia wypadków przy pracy</h1>
 
-          <div className="content-grid">
-            {/* New Report Card */}
-            <div className="card new-report-card">
-              <h2>Nowe zgłoszenie wypadku</h2>
-              <p>
-                Nowe zgłoszenie wypadku wyróżnisią do opratym zgłoszenie i 
-                wypadku przy pracy, zoeniemientu przy pracy świacego.
-              </p>
-              <button className="btn-primary">
-                ROZPOCZNIJ ZGŁOSZENIE (ASYSTENT)
-              </button>
-            </div>
+              <div className="content-grid">
+                {/* New Report Card */}
+                <div className="card new-report-card">
+                  <h2>Nowe zgłoszenie wypadku</h2>
+                  <p>
+                    Nowe zgłoszenie wypadku wyróżnisią do opratym zgłoszenie i 
+                    wypadku przy pracy, zoeniemientu przy pracy świacego.
+                  </p>
+                  <button className="btn-primary" onClick={handleStartForm}>
+                    ROZPOCZNIJ ZGŁOSZENIE (ASYSTENT)
+                  </button>
+                </div>
 
-            {/* Checklist Card */}
-            <div className="card checklist-card">
-              <h3>Zanim zaczniesz, przygotuj:</h3>
-              <ul className="checklist">
-                <li>
-                  <span className="check-icon"><CheckIcon /></span>
-                  Dane osobowe i PESEL
-                </li>
-                <li>
-                  <span className="check-icon"><CheckIcon /></span>
-                  Data i godzina zdarzenia
-                </li>
-                <li>
-                  <span className="check-icon"><CheckIcon /></span>
-                  Opis okoliczności
-                </li>
-                <li>
-                  <span className="check-icon"><CheckIcon /></span>
-                  Dane świadków
-                </li>
-              </ul>
-            </div>
-          </div>
+                {/* Checklist Card */}
+                <div className="card checklist-card">
+                  <h3>Zanim zaczniesz, przygotuj:</h3>
+                  <ul className="checklist">
+                    <li>
+                      <span className="check-icon"><CheckIcon /></span>
+                      Dane osobowe i PESEL
+                    </li>
+                    <li>
+                      <span className="check-icon"><CheckIcon /></span>
+                      Data i godzina zdarzenia
+                    </li>
+                    <li>
+                      <span className="check-icon"><CheckIcon /></span>
+                      Opis okoliczności
+                    </li>
+                    <li>
+                      <span className="check-icon"><CheckIcon /></span>
+                      Dane świadków
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-          {/* Recent Reports Table */}
-          <div className="card table-card">
-            <h2>Ostatnie zgłoszenia i wersje robocze</h2>
-            <table className="reports-table">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Pracownik</th>
-                  <th>Typ wypadku</th>
-                  <th>Status</th>
-                  <th>Akcja</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentReports.map((report) => (
-                  <tr key={report.id}>
-                    <td>{report.date}</td>
-                    <td>{report.employee}</td>
-                    <td>{report.type}</td>
-                    <td>
-                      <span className={`status-badge status-${report.status}`}>
-                        {report.status === 'draft' ? 'Wersja robocza' : 'Wysłano do ZUS'}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="btn-action">Akcja</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              {/* Recent Reports Table */}
+              <div className="card table-card">
+                <h2>Ostatnie zgłoszenia i wersje robocze</h2>
+                <table className="reports-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Pracownik</th>
+                      <th>Typ wypadku</th>
+                      <th>Status</th>
+                      <th>Akcja</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentReports.map((report) => (
+                      <tr key={report.id}>
+                        <td>{report.date}</td>
+                        <td>{report.employee}</td>
+                        <td>{report.type}</td>
+                        <td>
+                          <span className={`status-badge status-${report.status}`}>
+                            {report.status === 'draft' ? 'Wersja robocza' : 'Wysłano do ZUS'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="btn-action">Akcja</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="page-title">Dane poszkodowanego</h1>
+              <FormularzPoszkodowanego 
+                onSubmit={handleSubmitForm}
+                onCancel={handleCancelForm}
+              />
+            </>
+          )}
         </div>
       </main>
     </div>
