@@ -85,12 +85,6 @@ function App() {
           <div className="header-left">
             <div className="logo-container">
               <img src={zusLogo} alt="ZUS - Zakład Ubezpieczeń Społecznych" className="logo-zus" />
-              <div className="logo-separator"></div>
-              <div className="logo-description">
-                <span>ZAKŁAD</span>
-                <span>UBEZPIECZEŃ</span>
-                <span>SPOŁECZNYCH</span>
-              </div>
             </div>
           </div>
           
