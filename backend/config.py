@@ -1,25 +1,9 @@
-# ========== STRUKTURA PROJEKTU ==========
-#
-# backend/
-# ├── main.py                 # Punkt wejścia aplikacji
-# ├── config.py              # Konfiguracja aplikacji
-# ├── models/
-# │   ├── __init__.py
-# │   └── poszkodowany.py    # Model Poszkodowany
-# ├── routes/
-# │   ├── __init__.py
-# │   └── poszkodowani.py    # Endpointy dla poszkodowanych
-# └── database/
-#     ├── __init__.py
-#     └── db.py              # Połączenie z bazą danych
-
-
-# ========== config.py ==========
 from pydantic_settings import BaseSettings
+from pathlib import Path
 
 
 class Settings(BaseSettings):
-    app_name: str = "System Wyjaśnień Poszkodowanych"
+    app_name: str = "System ZUS"
     app_version: str = "1.0.0"
     api_prefix: str = "/api"
     host: str = "0.0.0.0"
@@ -33,10 +17,21 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173"
     ]
 
+    # LLM Configuration
+    groq_api_key: str = ""
+
     model_config = {
-        "env_file": ".env",
+        "env_file": str(Path(__file__).parent / ".env"),
+        "env_file_encoding": "utf-8",
         "extra": "ignore",
     }
 
 
 settings = Settings()
+
+# Debug - sprawdzenie czy klucz API został załadowany
+if settings.groq_api_key:
+    print(f"✅ Klucz API GROQ załadowany: {settings.groq_api_key[:10]}...")
+else:
+    print("⚠️ Brak klucza API GROQ w konfiguracji")
+

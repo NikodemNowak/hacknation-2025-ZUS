@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from backend.models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
-from backend.database.db import zawiadomienia_db
+from models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
+from database.db import zawiadomienia_db
 
 router = APIRouter(
     prefix="/zawiadomienia",
