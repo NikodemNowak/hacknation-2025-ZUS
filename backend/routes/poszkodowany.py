@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.Poszkodowany import Poszkodowany
-from backend.database.db import poszkodowani_db
+from models.Poszkodowany import Poszkodowany
+from database.db import poszkodowani_db
 
 router = APIRouter(
     prefix="/poszkodowani",

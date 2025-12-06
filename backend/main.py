@@ -1,9 +1,10 @@
+# ========== backend/main.py ==========
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from backend.config import settings
-from backend.routes import poszkodowani_router, adres_router, wyjasnienia_router
+from config import settings
+from routes import poszkodowani_router, adres_router, event_description_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -21,7 +22,7 @@ app.add_middleware(
 
 app.include_router(poszkodowani_router, prefix=settings.api_prefix)
 app.include_router(adres_router, prefix=settings.api_prefix)
-app.include_router(wyjasnienia_router, prefix=settings.api_prefix)
+app.include_router(event_description_router, prefix=settings.api_prefix + "/event-description", tags=["Event Description"])
 
 
 @app.get("/")
@@ -32,7 +33,8 @@ async def root():
         "endpoints": {
             "docs": "/docs",
             "poszkodowani": f"{settings.api_prefix}/poszkodowani",
-            "adresy": f"{settings.api_prefix}/adresy"
+            "adresy": f"{settings.api_prefix}/adresy",
+            "event_description": f"{settings.api_prefix}/event-description"
         }
     }
 
@@ -41,4 +43,4 @@ if __name__ == "__main__":
     print(f"Dokumentacja: http://localhost:{settings.port}/docs")
     print(f"API endpoint: http://localhost:{settings.port}{settings.api_prefix}/poszkodowani/")
 
-    uvicorn.run("backend.main:app", host=settings.host, port=settings.port, reload=True)
+    uvicorn.run("main:app", host=settings.host, port=settings.port, reload=True)

@@ -33,10 +33,10 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173"
     ]
 
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env",
+        "extra": "ignore",
+    }
 
 
 settings = Settings()
-
-
