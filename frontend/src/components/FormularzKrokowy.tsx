@@ -185,6 +185,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   const [inputValue, setInputValue] = useState('')
   const [animationClass, setAnimationClass] = useState('')
   const [showAiChat, setShowAiChat] = useState(false)
+  const [sectionOffset, setSectionOffset] = useState(0)
 
   const handleAiText = (text: string) => {
     // Append the generated text to the current input
@@ -354,6 +355,30 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   const currentField = currentSection.fields[currentFieldIndex]
   const totalFields = currentSection.fields.length
   const progress = ((currentFieldIndex + 1) / totalFields) * 100
+  const visibleSections = 3
+
+  const scrollSectionsLeft = () => {
+    if (sectionOffset > 0) {
+      setSectionOffset(prev => prev - 1)
+    }
+  }
+
+  const scrollSectionsRight = () => {
+    if (sectionOffset < sections.length - visibleSections) {
+      setSectionOffset(prev => prev + 1)
+    }
+  }
+
+  // Automatyczne przewijanie gdy aktywna sekcja wychodzi poza widok
+  useEffect(() => {
+    if (currentSectionIndex < sectionOffset) {
+      setSectionOffset(currentSectionIndex)
+    } else if (currentSectionIndex >= sectionOffset + visibleSections) {
+      setSectionOffset(currentSectionIndex - visibleSections + 1)
+    }
+  }, [currentSectionIndex])
+
+  const visibleSectionsArray = Array.from({ length: visibleSections }, (_, i) => sectionOffset + i).filter(index => index < sections.length)
 
   // Załaduj wartość dla bieżącego pola
   useEffect(() => {
@@ -505,17 +530,42 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
     <div className="form-krokowy-container">
       {/* Wskaźnik wszystkich sekcji */}
       <div className="sections-indicator">
-        {sections.map((section, index) => (
-          <div key={`section-${index}`} style={{ display: 'contents' }}>
-            <div
-              className={`progress-step ${index === currentSectionIndex ? 'active' : ''} ${index < currentSectionIndex ? 'completed' : ''}`}
-            >
-              <div className="step-number">{index + 1}</div>
-              <div className="step-label">{section.title}</div>
-            </div>
-            {index < sections.length - 1 && <div className="progress-line"></div>}
-          </div>
-        ))}
+        <button
+          type="button"
+          className="section-scroll-btn section-scroll-left"
+          onClick={scrollSectionsLeft}
+          disabled={sectionOffset === 0}
+          aria-label="Przewiń sekcje w lewo"
+        >
+          <ArrowLeftIcon />
+        </button>
+
+        <div className="sections-container">
+          {visibleSectionsArray.map((index, arrayIndex) => {
+            const section = sections[index]
+            return (
+              <div key={`section-${index}`} style={{ display: 'contents' }}>
+                <div
+                  className={`progress-step ${index === currentSectionIndex ? 'active' : ''} ${index < currentSectionIndex ? 'completed' : ''}`}
+                >
+                  <div className="step-number">{index + 1}</div>
+                  <div className="step-label">{section.title}</div>
+                </div>
+                {arrayIndex < visibleSectionsArray.length - 1 && <div className="progress-line"></div>}
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="section-scroll-btn section-scroll-right"
+          onClick={scrollSectionsRight}
+          disabled={sectionOffset >= sections.length - visibleSections}
+          aria-label="Przewiń sekcje w prawo"
+        >
+          <ArrowRightIcon />
+        </button>
       </div>
 
       {/* Progress bar dla aktualnej sekcji */}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './FormularzPoszkodowanego.css'
 
 interface Adres {
@@ -189,7 +189,9 @@ const takNieOptions = [
 export default function FormularzPoszkodowanego({ onSubmit, onCancel }: FormularzPoszkodowanegoProps) {
   const [formData, setFormData] = useState<ExtendedFormData>(extendedInitialFormData)
   const [currentStep, setCurrentStep] = useState(1)
+  const [stepOffset, setStepOffset] = useState(0)
   const totalSteps = 7
+  const visibleSteps = 3
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -322,44 +324,75 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
     }
   }
 
+  const scrollStepsLeft = () => {
+    if (stepOffset > 0) {
+      setStepOffset(prev => prev - 1)
+    }
+  }
+
+  const scrollStepsRight = () => {
+    if (stepOffset < totalSteps - visibleSteps) {
+      setStepOffset(prev => prev + 1)
+    }
+  }
+
+  // Automatyczne przewijanie gdy aktywny krok wychodzi poza widok
+  useEffect(() => {
+    if (currentStep - 1 < stepOffset) {
+      setStepOffset(currentStep - 1)
+    } else if (currentStep - 1 >= stepOffset + visibleSteps) {
+      setStepOffset(currentStep - visibleSteps)
+    }
+  }, [currentStep])
+
+  const visibleStepsArray = Array.from({ length: visibleSteps }, (_, i) => stepOffset + i + 1).filter(step => step <= totalSteps)
+
   return (
     <div className="form-container">
       {/* Progress Steps */}
       <div className="form-progress">
-        <div className={`progress-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-          <div className="step-number">1</div>
-          <div className="step-label">Dane osobowe</div>
+        <button
+          type="button"
+          className="step-scroll-btn step-scroll-left"
+          onClick={scrollStepsLeft}
+          disabled={stepOffset === 0}
+          aria-label="Przewiń kroki w lewo"
+        >
+          <ArrowLeftIcon />
+        </button>
+
+        <div className="progress-steps-container">
+          {visibleStepsArray.map((step, index) => {
+            const stepLabels = [
+              'Dane osobowe',
+              'Dokument',
+              'Adres zamieszkania',
+              'Adres korespondencyjny',
+              'Działalność',
+              'Opis sytuacji',
+              'Wyjaśnienia'
+            ]
+            return (
+              <div key={step}>
+                <div className={`progress-step ${currentStep >= step ? 'active' : ''} ${currentStep > step ? 'completed' : ''}`}>
+                  <div className="step-number">{step}</div>
+                  <div className="step-label">{stepLabels[step - 1]}</div>
+                </div>
+                {index < visibleStepsArray.length - 1 && <div className="progress-line"></div>}
+              </div>
+            )
+          })}
         </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-          <div className="step-number">2</div>
-          <div className="step-label">Dokument</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
-          <div className="step-number">3</div>
-          <div className="step-label">Adres zamieszkania</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 4 ? 'active' : ''} ${currentStep > 4 ? 'completed' : ''}`}>
-          <div className="step-number">4</div>
-          <div className="step-label">Adres korespondencyjny</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 5 ? 'active' : ''} ${currentStep > 5 ? 'completed' : ''}`}>
-          <div className="step-number">5</div>
-          <div className="step-label">Działalność</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 6 ? 'active' : ''} ${currentStep > 6 ? 'completed' : ''}`}>
-          <div className="step-number">6</div>
-          <div className="step-label">Opis sytuacji</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 7 ? 'active' : ''}`}>
-          <div className="step-number">7</div>
-          <div className="step-label">Wyjaśnienia</div>
-        </div>
+
+        <button
+          type="button"
+          className="step-scroll-btn step-scroll-right"
+          onClick={scrollStepsRight}
+          disabled={stepOffset >= totalSteps - visibleSteps}
+          aria-label="Przewiń kroki w prawo"
+        >
+          <ArrowRightIcon />
+        </button>
       </div>
 
       <form onSubmit={handleSubmit}>
