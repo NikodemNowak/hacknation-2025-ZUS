@@ -19,6 +19,7 @@ class Poszkodowany(BaseModel):
     miejsce_urodzenia: str = Field(..., description="Miejsce urodzenia")
     numer_telefonu: str = Field(..., description="Numer telefonu kontaktowego")
     adres_zamieszkania: Adres = Field(..., description="Adres zamieszkania")
+    adres_koresponcencyjny: Adres | None = Field(None, description="Adres korespondencyjny (opcjonalnie)")
 
     
 
@@ -66,6 +67,7 @@ class Poszkodowany(BaseModel):
                     "kod_pocztowy": "00-001",
                     "miejscowosc": "Warszawa",
                     "panstwo": "Polska"
-                }
+                },
+                "adres_korespondencyjny": None
             }
         }
