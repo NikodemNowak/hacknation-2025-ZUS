@@ -3,7 +3,8 @@ from .db import (
     dzialalnosci_db,
     adresy_db,
     zawiadomienia_db,
-    wyjasnienia_db
+    wyjasnienia_db,
+    cases_db
 )
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "dzialalnosci_db",
     "adresy_db",
     "zawiadomienia_db",
-    "wyjasnienia_db"
+    "wyjasnienia_db",
+    "cases_db"
 ]
