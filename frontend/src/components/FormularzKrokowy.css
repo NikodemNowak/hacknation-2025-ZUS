@@ -164,6 +164,14 @@
   font-weight: 400;
 }
 
+.field-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.6;
+  text-align: left;
+}
+
 .field-select {
   cursor: pointer;
   text-align: left;
