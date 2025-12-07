@@ -143,7 +143,7 @@ function App() {
   }
 
   const [userRole, setUserRole] = useState<UserRole>('platnik')
-  const [selectedFormId, setSelectedFormId] = useState<number | null>(null)
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const [formMode, setFormMode] = useState<FormMode>('step-by-step')
 
   const handleStartForm = () => {
@@ -180,23 +180,23 @@ function App() {
     setCurrentView('dashboard')
   }
 
-  const handleVerifyForm = (formId: number) => {
-    setSelectedFormId(formId)
+  const handleVerifyForm = (_formId: number, caseId: string) => {
+    setSelectedCaseId(caseId)
     setCurrentView('verification')
   }
 
   const handleBackToPanel = () => {
     setCurrentView('zus-panel')
-    setSelectedFormId(null)
+    setSelectedCaseId(null)
   }
 
-  const handleApproveForm = (formId: number) => {
-    console.log('Zaakceptowano formularz:', formId)
+  const handleApproveForm = (caseId: string) => {
+    console.log('Zaakceptowano sprawę:', caseId)
     handleBackToPanel()
   }
 
-  const handleRejectForm = (formId: number) => {
-    console.log('Odrzucono formularz:', formId)
+  const handleRejectForm = (caseId: string) => {
+    console.log('Odrzucono sprawę:', caseId)
     handleBackToPanel()
   }
 
@@ -315,12 +315,6 @@ function App() {
           {currentView === 'dashboard' && userRole === 'platnik' && (
             <>
               <h1 className="page-title">Zgłoszenia wypadków przy pracy</h1>
-
-              <div style={{ marginBottom: '20px' }}>
-                <button onClick={handleSeedData} style={{ padding: '8px 16px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
-                  🛠 Generuj dane testowe (Debug)
-                </button>
-              </div>
 
               <div className="content-grid">
                 {/* New Report Card */}
@@ -441,20 +435,19 @@ function App() {
 
           {/* Widok Panel Pracownika ZUS */}
           {currentView === 'zus-panel' && userRole === 'pracownik_zus' && (
-            <PanelPracownikaZUS onVerifyForm={handleVerifyForm} />
+            <PanelPracownikaZUS onVerifyForm={handleVerifyForm} onSeedData={handleSeedData} cases={cases} />
           )}
 
           {/* Widok Weryfikacji pojedynczego zgłoszenia */}
-          {currentView === 'verification' && userRole === 'pracownik_zus' && selectedFormId && (
-            <WidokWeryfikacji
-              formId={selectedFormId}
+          {currentView === 'verification' && userRole === 'pracownik_zus' && selectedCaseId && (
+            <WidokWeryfikacji 
+              formId={1}
+              caseId={selectedCaseId}
               onBack={handleBackToPanel}
               onApprove={handleApproveForm}
               onReject={handleRejectForm}
             />
-          )}
-
-          {/* Widok Formularza */}
+          )}          {/* Widok Formularza */}
           {currentView === 'form' && (
             <>
               <h1 className="page-title">Dane poszkodowanego</h1>

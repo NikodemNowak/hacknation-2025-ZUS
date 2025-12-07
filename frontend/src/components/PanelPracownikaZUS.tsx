@@ -1,8 +1,27 @@
 import { useState } from 'react'
 import './PanelPracownikaZUS.css'
 
+interface Case {
+  id: string
+  data_utworzenia: string
+  status: string
+  poszkodowany?: {
+    imie: string
+    nazwisko: string
+    pesel?: string
+  }
+  zawiadomienie?: {
+    platnik_skladek?: {
+      nazwa_firmy: string
+      nip_regon?: string
+    }
+  }
+}
+
 interface PanelPracownikaZUSProps {
-  onVerifyForm: (id: number) => void
+  onVerifyForm: (id: number, caseId: string) => void
+  onSeedData?: () => void
+  cases?: Case[]
 }
 
 // Ikony
@@ -34,83 +53,24 @@ const FilterIcon = () => (
   </svg>
 )
 
-// Dane mockowe - formularze do recenzji
-const formulazeDoRecenzji = [
-  {
-    id: 1,
-    dataZgloszenia: '15.03.2024',
-    platnik: 'Jan Kowalski Usługi Budowlane',
-    nip: '1234567890',
-    poszkodowany: 'Anna Nowak',
-    pesel: '85010112345',
-    status: 'pending',
-    priorytet: 'high'
-  },
-  {
-    id: 2,
-    dataZgloszenia: '14.03.2024',
-    platnik: 'ABC Transport Sp. z o.o.',
-    nip: '9876543210',
-    poszkodowany: 'Piotr Wiśniewski',
-    pesel: '78052298765',
-    status: 'pending',
-    priorytet: 'normal'
-  },
-  {
-    id: 3,
-    dataZgloszenia: '13.03.2024',
-    platnik: 'XYZ Budowa Sp. z o.o.',
-    nip: '5555666777',
-    poszkodowany: 'Maria Kowalczyk',
-    pesel: '92111203456',
-    status: 'in_review',
-    priorytet: 'normal'
-  },
-  {
-    id: 4,
-    dataZgloszenia: '12.03.2024',
-    platnik: 'Delta Services Sp. z o.o.',
-    nip: '3333444555',
-    poszkodowany: 'Tomasz Lewandowski',
-    pesel: '80030154321',
-    status: 'pending',
-    priorytet: 'low'
-  },
-  {
-    id: 5,
-    dataZgloszenia: '10.03.2024',
-    platnik: 'Gamma Production Sp. z o.o.',
-    nip: '7777888999',
-    poszkodowany: 'Katarzyna Zielińska',
-    pesel: '88080812345',
-    status: 'in_review',
-    priorytet: 'high'
-  },
-  {
-    id: 6,
-    dataZgloszenia: '09.03.2024',
-    platnik: 'Beta Logistics Sp. z o.o.',
-    nip: '2222333444',
-    poszkodowany: 'Jan Kowalski',
-    pesel: '75121212345',
-    status: 'approved',
-    priorytet: 'normal'
-  },
-  {
-    id: 7,
-    dataZgloszenia: '08.03.2024',
-    platnik: 'Omega Construction Sp. z o.o.',
-    nip: '6666777888',
-    poszkodowany: 'Ewa Mazur',
-    pesel: '90050598765',
-    status: 'rejected',
-    priorytet: 'low'
-  },
-]
 
-export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSProps) {
+
+export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [] }: PanelPracownikaZUSProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
+  
+  // Konwersja cases z backendu na format używany w komponencie
+  const formulazeDoRecenzji = cases.map((c, index) => ({
+    id: index + 1,
+    caseId: c.id,
+    dataZgloszenia: c.data_utworzenia || 'Brak daty',
+    platnik: c.zawiadomienie?.platnik_skladek?.nazwa_firmy || 'Nieznany płatnik',
+    nip: c.zawiadomienie?.platnik_skladek?.nip_regon || 'Brak NIP',
+    poszkodowany: c.poszkodowany ? `${c.poszkodowany.imie} ${c.poszkodowany.nazwisko}` : 'Nieznany',
+    pesel: c.poszkodowany?.pesel || 'Brak PESEL',
+    status: c.status === 'Weryfikacja' ? 'pending' : c.status === 'W trakcie' ? 'in_review' : c.status === 'Wysłano' ? 'approved' : 'rejected',
+    priorytet: 'normal'
+  }))
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -131,8 +91,8 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
     }
   }
 
-  const handleVerifyForm = (id: number) => {
-    onVerifyForm(id)
+  const handleVerifyForm = (id: number, caseId: string) => {
+    onVerifyForm(id, caseId)
   }
 
   const filteredFormularze = formulazeDoRecenzji.filter(form => {
@@ -150,6 +110,15 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
   return (
     <div className="panel-pracownika-zus">
       <h1 className="page-title">Panel Pracownika ZUS - Weryfikacja Zgłoszeń</h1>
+
+      {/* Przycisk generowania danych testowych */}
+      {onSeedData && (
+        <div style={{ marginBottom: '20px' }}>
+          <button onClick={onSeedData} style={{ padding: '8px 16px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
+            🛠 Generuj dane testowe (Debug)
+          </button>
+        </div>
+      )}
 
       {/* Statystyki */}
       <div className="stats-grid">
@@ -273,7 +242,7 @@ export default function PanelPracownikaZUS({ onVerifyForm }: PanelPracownikaZUSP
                     <td>
                       <button
                         className="btn-action"
-                        onClick={() => handleVerifyForm(form.id)}
+                        onClick={() => handleVerifyForm(form.id, form.caseId)}
                       >
                         Weryfikuj
                       </button>
