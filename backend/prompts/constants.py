@@ -1,9 +1,8 @@
-
 KRYTERIA_WYPADKU = [
     "Nagłość zdarzenia",
     "Przyczyna zewnętrzna",
     "Uraz lub śmierć",
-    "Związek z pracą (Działalność gospodarcza)"
+    "Związek z pracą (Działalność gospodarcza)",
 ]
 
 DEFINICJE_SZCZEGOLOWE = {
@@ -18,7 +17,6 @@ DEFINICJE_SZCZEGOLOWE = {
     - Trwający kilka sekund kontakt dłoni z piłą tarczową.
     - Kilkugodzinne oddziaływanie tlenku węgla (czadu) na palacza kotłów.
     """,
-
     "Przyczyna zewnętrzna": """
     Zgodnie z definicją ZUS:
     Czynnik występujący POZA organizmem człowieka. Do przyczyn zewnętrznych zaliczamy czynniki, które działając z zewnątrz spowodowały wypadek lub przyczyniły się do jego powstania.
@@ -34,7 +32,6 @@ DEFINICJE_SZCZEGOLOWE = {
 
     WAŻNE: Musi to być czynnik spoza organizmu (nie wyłącznie choroba samoistna).
     """,
-
     "Uraz lub śmierć": """
     Zgodnie z definicją ZUS:
     Uraz to uszkodzenie tkanek ciała lub narządów człowieka wskutek działania czynnika zewnętrznego.
@@ -46,7 +43,6 @@ DEFINICJE_SZCZEGOLOWE = {
 
     Śmierć również jest kwalifikowana jako skutek wypadku.
     """,
-
     "Związek z pracą (Działalność gospodarcza)": """
     Zgodnie z definicją ZUS dla osób prowadzących działalność pozarolniczą:
     1. Zdarzenie musi nastąpić w okresie ubezpieczenia wypadkowego z tytułu prowadzenia działalności.
@@ -59,13 +55,12 @@ DEFINICJE_SZCZEGOLOWE = {
     - Miejscowy,
     - Funkcjonalny.
     """,
-
     "Wykluczenia": """
     Odstępuje się od sporządzenia karty wypadku (nie uznaje się wypadku), jeżeli:
     1. Wypadek nie nastąpił w okresie ubezpieczenia wypadkowego.
     2. Poszkodowany nie przedłożył dokumentów niezbędnych do dokonania kwalifikacji prawnej.
     3. ZUS nie jest właściwy do sporządzenia karty.
-    """
+    """,
 }
 
 # WYMAGANE_DANE_ZGŁOSZENIA = {
@@ -96,18 +91,19 @@ AI_EXTRACT_KEYS = [
     "sekwencja_zdarzen",
     "opis_miejsca_wypadku",
     "rodzaj_urazow",
-    "swiadkowie"
+    "swiadkowie",
 ]
 
 CHECKLISTA_PYTAN = {
-    "rodzaj_czynnosci": "Jakie konkretnie czynności wykonywał poszkodowany w momencie zdarzenia? (np. przenoszenie, malowanie, obsługa maszyny)",
+    "rodzaj_czynnosci": "Jakie konkretnie czynności wykonywał poszkodowany w momencie zdarzenia - propozycja na podstawie kontekstu?",
     "okolicznosci_wypadku": "Szczegółowy opis przebiegu zdarzenia - co dokładnie się wydarzyło?",
-    "przyczyny_wypadku": "Co było bezpośrednią przyczyną? (np. poślizgnięcie, awaria maszyny, upadek przedmiotu, przyczyna zewnętrzna)",
+    "przyczyny_wypadku": "Co było bezpośrednią przyczyną?",
     "sekwencja_zdarzen": "Opis krok po kroku: co działo się bezpośrednio przed, w trakcie i po wypadku.",
     "opis_miejsca_wypadku": "Warunki w miejscu wypadku (np. oświetlenie, stan nawierzchni, pogoda - jeśli na zewnątrz).",
-    "rodzaj_urazow": "Jakich obrażeń doznał poszkodowany? (np. złamanie, stłuczenie, rana cięta).",
-    "swiadkowie": "Czy byli naoczni świadkowie zdarzenia? (Jeśli tak - imiona i nazwiska)."
+    "rodzaj_urazow": "Jakich obrażeń doznał poszkodowany? (propozycja na podstawie znanych faktów).",
+    "swiadkowie": "Czy byli naoczni świadkowie zdarzenia? (Jeśli tak - imiona i nazwiska).",
 }
+
 
 def get_flat_checklist_keys():
     return AI_EXTRACT_KEYS
