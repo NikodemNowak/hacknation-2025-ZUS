@@ -329,10 +329,9 @@ function App() {
               <div className="content-grid">
                 {/* New Report Card */}
                 <div className="card new-report-card">
-                  <h2>Nowe zgłoszenie wypadku</h2>
+                  <h2>Zgłoszenie wypadku</h2>
                   <p>
-                    Nowe zgłoszenie wypadku wyróżnisią do opratym zgłoszenie i
-                    wypadku przy pracy, zoeniemientu przy pracy świacego.
+                    Nowe zgłoszenie wypadku przy pracy.
                   </p>
                   <button className="btn-primary" onClick={handleStartForm}>
                     ROZPOCZNIJ ZGŁOSZENIE (ASYSTENT)
@@ -450,7 +449,7 @@ function App() {
 
           {/* Widok Weryfikacji pojedynczego zgłoszenia */}
           {currentView === 'verification' && userRole === 'pracownik_zus' && selectedCaseId && (
-            <WidokWeryfikacji 
+            <WidokWeryfikacji
               formId={1}
               caseId={selectedCaseId}
               onBack={handleBackToPanel}
