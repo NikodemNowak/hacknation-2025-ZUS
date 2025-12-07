@@ -6,4 +6,5 @@ backend/env/
 backend/database/__pycache__/
 backend/models/__pycache__/
 backend/routes/__pycache__/
+backend/prompts/__pycache__/
 /backend/.env
