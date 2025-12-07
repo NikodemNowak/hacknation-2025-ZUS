@@ -5,6 +5,12 @@ interface AIChatAssistantProps {
     currentText: string
     onClose: () => void
     onUseText: (text: string) => void
+    onUpdateFormData?: (data: any) => void
+    userData?: {
+        imie: string
+        nazwisko: string
+        nip: string
+    }
 }
 
 interface Message {
@@ -12,12 +18,11 @@ interface Message {
     content: string
 }
 
-export default function AIChatAssistant({ currentText, onClose, onUseText }: AIChatAssistantProps) {
-    const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: 'Dzień dobry! Jestem asystentem AI. Pomogę Ci uzupełnić opis wypadku. Przeanalizuję Twój tekst i zadam pytania pomocnicze, jeśli czegoś brakuje.' }
-    ])
+export default function AIChatAssistant({ currentText, onClose, onUseText, onUpdateFormData, userData }: AIChatAssistantProps) {
+    const [messages, setMessages] = useState<Message[]>([])
     const [inputValue, setInputValue] = useState('')
     const [isTyping, setIsTyping] = useState(false)
+    const [sessionId, setSessionId] = useState<string | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
@@ -28,20 +33,32 @@ export default function AIChatAssistant({ currentText, onClose, onUseText }: AIC
         scrollToBottom()
     }, [messages])
 
-    // Initial analysis simulation if there is text
+    // Auto-start Groq Session on mount
     useEffect(() => {
-        if (currentText && messages.length === 1) {
-            handleInitialAnalysis(currentText)
-        }
+        startGroqSession()
     }, [])
 
-    const handleInitialAnalysis = async (text: string) => {
+    const startGroqSession = async () => {
         setIsTyping(true)
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        const analysis = simulateAPI(text, "analysis")
-        setMessages(prev => [...prev, { role: 'assistant', content: analysis }])
+        try {
+            const response = await fetch('/api/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imie: userData?.imie || "Nieznane",
+                    nazwisko: userData?.nazwisko || "Nieznane",
+                    nip: userData?.nip || "0000000000"
+                })
+            })
+            const data = await response.json()
+            setSessionId(data.session_id)
+            setMessages([
+                { role: 'assistant', content: data.welcome_message }
+            ])
+        } catch (error) {
+            console.error("Failed to start session:", error)
+            setMessages([{ role: 'assistant', content: "Przepraszam, wystąpił błąd połączenia z serwerem." }])
+        }
         setIsTyping(false)
     }
 
@@ -53,39 +70,31 @@ export default function AIChatAssistant({ currentText, onClose, onUseText }: AIC
         setInputValue('')
         setIsTyping(true)
 
-        // Simulate API call
-        // TODO: Replace with real API call to /api/chat
-        // const response = await fetch('/api/chat', ...)
+        // Groq Mode Only
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    user_message: inputValue
+                })
+            })
+            const data = await response.json()
 
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        const responseText = simulateAPI(inputValue, "chat", messages)
+            setMessages(prev => [...prev, { role: 'assistant', content: data.ai_message }])
 
-        setMessages(prev => [...prev, { role: 'assistant', content: responseText }])
+            if (data.is_finished && data.checklist) {
+                if (onUpdateFormData) {
+                    onUpdateFormData(data.checklist)
+                    setMessages(prev => [...prev, { role: 'assistant', content: "✅ Zebrałem wszystkie informacje i zaktualizowałem formularz." }])
+                }
+            }
+        } catch (error) {
+            console.error("Chat error:", error)
+            setMessages(prev => [...prev, { role: 'assistant', content: "Wystąpił błąd podczas rozmowy." }])
+        }
         setIsTyping(false)
-    }
-
-    // Placeholder for Logic or API connection
-    const simulateAPI = (text: string, type: "analysis" | "chat", context?: Message[]) => {
-        const lower = text.toLowerCase()
-
-        if (type === "analysis") {
-            if (text.length < 20) return "Twój opis jest bardzo krótki. Proszę opisz dokładniej co robiłeś tuż przed wypadkiem?"
-            if (!lower.includes("kiedy") && !text.match(/\d{4}/)) return "Widzę opis, ale brakuje mi daty lub godziny. Kiedy dokładnie to się stało?"
-            return "Przeczytałem Twój opis. Czy są jeszcze jakieś szczegóły dotyczące otoczenia (np. śliska podłoga, hałas), które warto dodać?"
-        }
-
-        // Chat logic
-        if (lower.includes("data") || lower.includes("godzina") || text.match(/\d{4}/)) {
-            return "Dziękuję. To ważna informacja. A w jakim dokładnie miejscu (pokój, hala) to się wydarzyło?"
-        }
-        if (lower.includes("miejsce") || lower.includes("hala") || lower.includes("biur")) {
-            return "Rozumiem. Czy w tym miejscu panowały jakieś trudne warunki (np. słabe oświetlenie)?"
-        }
-        if (lower.includes("tak") || lower.includes("nie")) {
-            return "Dobrze. Proszę opisz teraz sam moment urazu - co dokładnie poczułeś i która część ciała ucierpiała?"
-        }
-
-        return "Rozumiem. Co stało się potem? Czy ktoś udzielił Ci pomocy?"
     }
 
     return (
@@ -93,7 +102,7 @@ export default function AIChatAssistant({ currentText, onClose, onUseText }: AIC
             <div className="ai-chat-window">
                 <div className="ai-chat-header">
                     <div className="ai-chat-title">
-                        <span>🤖</span> Asystent Opisu
+                        <span>🤖</span> Inteligentny Asystent
                     </div>
                     <button className="btn-close" onClick={onClose}>&times;</button>
                 </div>

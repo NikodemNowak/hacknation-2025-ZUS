@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import AIChatAssistant from './AIChatAssistant'
 import './FormularzPoszkodowanego.css'
 
 interface Adres {
@@ -190,6 +191,7 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
   const [formData, setFormData] = useState<ExtendedFormData>(extendedInitialFormData)
   const [currentStep, setCurrentStep] = useState(1)
   const [stepOffset, setStepOffset] = useState(0)
+  const [showAiChat, setShowAiChat] = useState(false)
   const totalSteps = 7
   const visibleSteps = 3
 
@@ -1033,9 +1035,30 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
             <div className="form-grid">
               <div className="form-group form-group-full">
-                <label htmlFor="opis_okolicznosci">
-                  Opis okoliczności wypadku <span className="required">*</span>
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label htmlFor="opis_okolicznosci">
+                    Opis okoliczności wypadku <span className="required">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiChat(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #6c5ce7 0%, #a55eea 100%)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '5px 15px',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      fontSize: '0.9em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      marginBottom: '5px'
+                    }}
+                  >
+                    <span>✨</span> Uruchom Asystenta AI
+                  </button>
+                </div>
                 <textarea
                   id="opis_okolicznosci"
                   name="opis_okolicznosci"
@@ -1677,7 +1700,38 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
           </div>
         </div>
       </form>
+
+      {showAiChat && (
+        <AIChatAssistant
+          currentText={formData.opis_okolicznosci}
+          onClose={() => setShowAiChat(false)}
+          onUseText={(text) => {
+            setFormData(prev => ({ ...prev, opis_okolicznosci: text }))
+            setShowAiChat(false)
+          }}
+          onUpdateFormData={(data) => {
+            setFormData(prev => {
+              const newData = { ...prev }
+              if (data.rodzaj_czynnosci) newData.rodzaj_czynnosci = data.rodzaj_czynnosci
+              // Map to both Step 7 field and Step 6 description
+              if (data.okolicznosci_wypadku) {
+                newData.okolicznosci_wypadku = data.okolicznosci_wypadku
+                newData.opis_okolicznosci = data.okolicznosci_wypadku
+              }
+              if (data.przyczyny_wypadku) newData.przyczyny_wypadku = data.przyczyny_wypadku
+              if (data.sekwencja_zdarzen) newData.sekwencja_zdarzen = data.sekwencja_zdarzen
+              if (data.opis_miejsca_wypadku) newData.opis_miejsca_wypadku = data.opis_miejsca_wypadku
+              if (data.rodzaj_urazow) newData.rodzaj_urazow = data.rodzaj_urazow
+              return newData
+            })
+          }}
+          userData={{
+            imie: formData.imie,
+            nazwisko: formData.nazwisko,
+            nip: formData.dzialalnosc?.nip_regon || ''
+          }}
+        />
+      )}
     </div>
   )
 }
-
