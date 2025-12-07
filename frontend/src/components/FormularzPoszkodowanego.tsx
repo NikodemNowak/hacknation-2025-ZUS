@@ -1722,6 +1722,8 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
               if (data.sekwencja_zdarzen) newData.sekwencja_zdarzen = data.sekwencja_zdarzen
               if (data.opis_miejsca_wypadku) newData.opis_miejsca_wypadku = data.opis_miejsca_wypadku
               if (data.rodzaj_urazow) newData.rodzaj_urazow = data.rodzaj_urazow
+              if (data.przyczyna_zewnetrzna) newData.przyczyna_zewnetrzna = data.przyczyna_zewnetrzna
+              if (data.zwiazek_z_praca) newData.zwiazek_z_praca = data.zwiazek_z_praca
               return newData
             })
           }}
