@@ -5,6 +5,7 @@ import FormularzKrokowy from './components/FormularzKrokowy'
 import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
 import PanelPracownikaZUS from './components/PanelPracownikaZUS'
 import WidokWeryfikacji from './components/WidokWeryfikacji'
+import ProtocolPowypadkowy from './components/ProtocolPowypadkowy'
 import { submitFullForm } from './services/api'
 import type { ExtendedFormData } from './components/FormularzPoszkodowanego'
 
@@ -97,7 +98,7 @@ interface Case {
 // API Config
 const API_URL = 'http://127.0.0.1:8000'
 
-type ViewType = 'dashboard' | 'form' | 'zus-panel' | 'verification'
+type ViewType = 'dashboard' | 'form' | 'zus-panel' | 'verification' | 'protocol'
 type UserRole = 'platnik' | 'pracownik_zus'
 type FormMode = 'classic' | 'step-by-step'
 
@@ -190,9 +191,18 @@ function App() {
     setSelectedCaseId(null)
   }
 
-  const handleApproveForm = (caseId: string) => {
-    console.log('Zaakceptowano sprawę:', caseId)
-    handleBackToPanel()
+  const handleApproveCase = () => {
+    setCurrentView('protocol')
+  }
+
+  const handleBackFromProtocol = () => {
+    setCurrentView('verification')
+  }
+
+  const handleFinalizeCase = () => {
+    alert('Sprawa została sfinalizowana i zamknięta.')
+    setCurrentView('zus-panel')
+    setSelectedCaseId(null)
   }
 
   const handleRejectForm = (caseId: string) => {
@@ -444,10 +454,21 @@ function App() {
               formId={1}
               caseId={selectedCaseId}
               onBack={handleBackToPanel}
-              onApprove={handleApproveForm}
+              onApprove={handleApproveCase}
               onReject={handleRejectForm}
             />
-          )}          {/* Widok Formularza */}
+          )}
+
+          {/* Widok Protokołu Powypadkowego */}
+          {currentView === 'protocol' && userRole === 'pracownik_zus' && selectedCaseId && (
+            <ProtocolPowypadkowy 
+              caseId={selectedCaseId}
+              onBack={handleBackFromProtocol}
+              onFinalize={handleFinalizeCase}
+            />
+          )}
+
+          {/* Widok Formularza */}
           {currentView === 'form' && (
             <>
               <h1 className="page-title">Dane poszkodowanego</h1>

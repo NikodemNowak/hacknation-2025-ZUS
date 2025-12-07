@@ -79,7 +79,7 @@ interface FormData {
 interface WidokWeryfikacjiProps {
   formId: number
   onBack: () => void
-  onApprove?: (id: string) => void
+  onApprove?: () => void
   onReject?: (id: string) => void
   caseId?: string
 }
@@ -252,7 +252,7 @@ export default function WidokWeryfikacji({ formId, onBack, onApprove, onReject, 
     }
   }
 
-  const handleApprove = () => { if (onApprove && caseId) onApprove(caseId); alert('Zatwierdzono'); }
+  const handleApprove = () => { if (onApprove) onApprove(); }
   const handleReject = () => { if (onReject && caseId) onReject(caseId); alert('Odrzucono'); }
 
   const handleOpenAiPanel = () => {
