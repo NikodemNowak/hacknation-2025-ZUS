@@ -25,7 +25,8 @@ def call_llm_api(
 
     try:
         params = {
-            "model": "llama-3.3-70b-versatile",
+            #"model": "llama-3.3-70b-versatile",
+            "model": "openai/gpt-oss-120b",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},

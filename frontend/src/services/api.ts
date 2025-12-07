@@ -14,12 +14,21 @@ export const createCase = async () => {
 };
 
 export const updateZawiadomienie = async (caseId: string, data: any) => {
+    // Mock kod_pkd for testing
+    const dataWithKodPkd = {
+        ...data,
+        platnik_skladek: {
+            ...data.platnik_skladek,
+            kod_pkd: data.platnik_skladek?.kod_pkd || '41.20.Z'
+        }
+    };
+
     const response = await fetch(`${API_URL}/api/cases/${caseId}/zawiadomienie`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(dataWithKodPkd),
     });
     if (!response.ok) {
         const errorBody = await response.text();
