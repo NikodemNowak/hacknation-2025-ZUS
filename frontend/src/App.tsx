@@ -5,6 +5,9 @@ import FormularzKrokowy from './components/FormularzKrokowy'
 import FormularzPoszkodowanego from './components/FormularzPoszkodowanego'
 import PanelPracownikaZUS from './components/PanelPracownikaZUS'
 import WidokWeryfikacji from './components/WidokWeryfikacji'
+import ProtocolPowypadkowy from './components/ProtocolPowypadkowy'
+import { submitFullForm, updateCaseStatus } from './services/api'
+import type { ExtendedFormData } from './components/FormularzPoszkodowanego'
 
 // Ikony jako komponenty SVG
 const DashboardIcon = () => (
@@ -33,27 +36,6 @@ const AccidentIcon = () => (
   </svg>
 )
 
-const MedicalIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-  </svg>
-)
-
-const HelpIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-)
-
-const SettingsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-)
-
 const BellIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -76,7 +58,9 @@ const SearchIcon = () => (
 
 const SwitchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
   </svg>
 )
 
@@ -114,7 +98,7 @@ interface Case {
 // API Config
 const API_URL = 'http://127.0.0.1:8000'
 
-type ViewType = 'dashboard' | 'form' | 'zus-panel' | 'verification'
+type ViewType = 'dashboard' | 'form-selection' | 'form' | 'zus-panel' | 'verification' | 'protocol'
 type UserRole = 'platnik' | 'pracownik_zus'
 type FormMode = 'classic' | 'step-by-step'
 
@@ -136,10 +120,12 @@ function App() {
     }
   }
 
-  // Initial load
+  // Initial load & Refetch on view change
   useEffect(() => {
-    fetchCases()
-  }, [])
+    if (currentView === 'dashboard' || currentView === 'zus-panel') {
+      fetchCases()
+    }
+  }, [currentView])
 
   // Funkcja do generowania danych testowych
   const handleSeedData = async () => {
@@ -158,11 +144,22 @@ function App() {
       alert('Błąd połączenia z serwerem')
     }
   }
+
   const [userRole, setUserRole] = useState<UserRole>('platnik')
-  const [selectedFormId, setSelectedFormId] = useState<number | null>(null)
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const [formMode, setFormMode] = useState<FormMode>('step-by-step')
+  const [payerInfo, setPayerInfo] = useState<{ name: string, nip: string } | null>(null)
+
+  const handlePayerChange = (name: string, nip: string) => {
+    setPayerInfo({ name, nip })
+  }
 
   const handleStartForm = () => {
+    setCurrentView('form-selection')
+  }
+
+  const handleSelectMode = (mode: FormMode) => {
+    setFormMode(mode)
     setCurrentView('form')
   }
 
@@ -170,40 +167,97 @@ function App() {
     setCurrentView('dashboard')
   }
 
-  const handleSubmitForm = (data: unknown) => {
-    console.log('Dane formularza:', data)
-    alert('Dane poszkodowanego zostały zapisane!')
-    setCurrentView('dashboard')
+  const handleSubmitForm = async (data: unknown) => {
+    console.log('Rozpoczynam wysyłanie formularza...', data)
+
+    try {
+      // Wyślij dane do backendu
+      const caseId = await submitFullForm(data as ExtendedFormData)
+
+      console.log(`Sukces! Utworzono sprawę o ID: ${caseId}`)
+      alert(`Sukces! Zgłoszenie zostało wysłane. ID sprawy: ${caseId}`)
+
+      fetchCases() // Odśwież listę na dashboardzie
+      setCurrentView('dashboard')
+
+    } catch (error) {
+      console.error('Błąd wysyłania formularza:', error)
+      alert('Wystąpił błąd podczas wysyłania zgłoszenia. Sprawdź konsolę.')
+    }
   }
 
   const toggleUserRole = () => {
     const newRole = userRole === 'platnik' ? 'pracownik_zus' : 'platnik'
     setUserRole(newRole)
-    // Automatycznie przełącz widok
-    if (newRole === 'pracownik_zus') {
-      setCurrentView('zus-panel')
-    } else {
-      setCurrentView('dashboard')
-    }
+    // Automatycznie przełącz widok na dashboard
+    setCurrentView('dashboard')
   }
 
-  const handleVerifyForm = (formId: number) => {
-    setSelectedFormId(formId)
+  const handleVerifyForm = async (_formId: number, caseId: string, currentStatus?: string) => {
+    // Jeśli sprawa jest już zakończona (Zatwierdzone/Odrzucone), wchodzimy w tryb podglądu BEZ zmiany statusu
+    if (currentStatus === 'approved' || currentStatus === 'rejected' || currentStatus === 'Zatwierdzone' || currentStatus === 'Odrzucone') {
+      setSelectedCaseId(caseId)
+      setCurrentView('verification')
+      return // Przerywamy, nie aktualizujemy statusu
+    }
+
+    // Aktualizuj status lokalnie na "W weryfikacji"
+    setCases(prev => prev.map(c =>
+      c.id === caseId ? { ...c, status: 'W weryfikacji' } : c
+    ))
+
+    // Aktualizuj status w backendzie
+    try {
+      await updateCaseStatus(caseId, 'W weryfikacji')
+    } catch (err) {
+      console.error('Failed to update status in backend', err)
+    }
+
+    setSelectedCaseId(caseId)
     setCurrentView('verification')
   }
 
   const handleBackToPanel = () => {
     setCurrentView('zus-panel')
-    setSelectedFormId(null)
+    setSelectedCaseId(null)
   }
 
-  const handleApproveForm = (formId: number) => {
-    console.log('Zaakceptowano formularz:', formId)
-    handleBackToPanel()
+  const handleApproveCase = async () => {
+    if (selectedCaseId) {
+      setCases(prev => prev.map(c =>
+        c.id === selectedCaseId ? { ...c, status: 'Zatwierdzone' } : c
+      ))
+      // Aktualizuj status w backendzie
+      try {
+        await updateCaseStatus(selectedCaseId, 'Zatwierdzone')
+      } catch (err) {
+        console.error('Failed to update status in backend', err)
+      }
+    }
+    setCurrentView('protocol')
   }
 
-  const handleRejectForm = (formId: number) => {
-    console.log('Odrzucono formularz:', formId)
+  const handleBackFromProtocol = () => {
+    setCurrentView('verification')
+  }
+
+  const handleFinalizeCase = () => {
+    alert('Sprawa została sfinalizowana i zamknięta.')
+    setCurrentView('zus-panel')
+    setSelectedCaseId(null)
+  }
+
+  const handleRejectForm = async (caseId: string) => {
+    console.log('Odrzucono sprawę:', caseId)
+    setCases(prev => prev.map(c =>
+      c.id === caseId ? { ...c, status: 'Odrzucone' } : c
+    ))
+    // Aktualizuj status w backendzie
+    try {
+      await updateCaseStatus(caseId, 'Odrzucone')
+    } catch (err) {
+      console.error('Failed to update status in backend', err)
+    }
     handleBackToPanel()
   }
 
@@ -213,22 +267,29 @@ function App() {
       <header className="top-header">
         <div className="top-header-content">
           <div className="header-left">
-            <div className="logo-container">
+            <div
+              className="logo-container"
+              onClick={() => setCurrentView('dashboard')}
+              style={{ cursor: 'pointer' }}
+              title="Wróć do pulpitu"
+            >
               <img src={zusLogo} alt="ZUS - Zakład Ubezpieczeń Społecznych" className="logo-zus" />
             </div>
           </div>
 
           <div className="header-right">
             <span className="header-user-info">
-              {userRole === 'platnik' 
-                ? 'Płatnik: Jan Kowalski Usługi Budowlane, NIP: 1234567890'
+              {userRole === 'platnik'
+                ? (payerInfo && (payerInfo.name || payerInfo.nip)
+                  ? `Płatnik: ${payerInfo.name}${payerInfo.nip ? `, NIP: ${payerInfo.nip}` : ''}`
+                  : 'Panel Płatnika')
                 : 'Pracownik ZUS: Anna Nowak, ID: ZUS-12345'
               }
             </span>
-            
+
             {/* Przycisk przełączania trybu */}
-            <button 
-              className="btn-role-switch" 
+            <button
+              className="btn-role-switch"
               onClick={toggleUserRole}
               title={`Przełącz na: ${userRole === 'platnik' ? 'Pracownik ZUS' : 'Płatnik'}`}
             >
@@ -259,8 +320,8 @@ function App() {
       {/* Main Navigation */}
       <nav className="main-nav">
         <div className="main-nav-content">
-          <a 
-            href="#" 
+          <a
+            href="#"
             className={`main-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
             onClick={() => setCurrentView('dashboard')}
           >
@@ -271,31 +332,20 @@ function App() {
             <DocumentIcon />
             <span>Dokumenty ZUS</span>
           </a>
-          <a 
-            href="#" 
-            className={`main-nav-item ${currentView === 'zus-panel' || currentView === 'form' || currentView === 'verification' ? 'active' : ''}`}
-            onClick={() => userRole === 'pracownik_zus' ? setCurrentView('zus-panel') : null}
+          <a
+            href="#"
+            className={`main-nav-item ${currentView === 'zus-panel' || currentView === 'form' || currentView === 'form-selection' || currentView === 'verification' ? 'active' : ''}`}
+            onClick={() => userRole === 'pracownik_zus' ? setCurrentView('zus-panel') : setCurrentView('form-selection')}
           >
             <AccidentIcon />
-            <span>Wypadki przy pracy</span>
+            <span>Formularze</span>
           </a>
-          <a href="#" className="main-nav-item">
-            <MedicalIcon />
-            <span>e-ZLA</span>
-          </a>
-          <a href="#" className="main-nav-item">
-            <HelpIcon />
-            <span>Pomoc</span>
-          </a>
-          <a href="#" className="main-nav-item">
-            <SettingsIcon />
-            <span>Ustawienia</span>
-          </a>
+
 
           {/* Przełącznik widoku formularza - tylko gdy jesteśmy w formularzu */}
           {currentView === 'form' && (
             <div className="nav-form-switch" onClick={(e) => e.stopPropagation()}>
-              <button 
+              <button
                 type="button"
                 className={`nav-mode-btn ${formMode === 'step-by-step' ? 'active' : ''}`}
                 onClick={(e) => {
@@ -308,7 +358,7 @@ function App() {
                 <ListIcon />
                 <span>Krok po kroku</span>
               </button>
-              <button 
+              <button
                 type="button"
                 className={`nav-mode-btn ${formMode === 'classic' ? 'active' : ''}`}
                 onClick={(e) => {
@@ -334,19 +384,12 @@ function App() {
             <>
               <h1 className="page-title">Zgłoszenia wypadków przy pracy</h1>
 
-              <div style={{ marginBottom: '20px' }}>
-                <button onClick={handleSeedData} style={{ padding: '8px 16px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
-                  🛠 Generuj dane testowe (Debug)
-                </button>
-              </div>
-
               <div className="content-grid">
                 {/* New Report Card */}
                 <div className="card new-report-card">
-                  <h2>Nowe zgłoszenie wypadku</h2>
+                  <h2>Zgłoszenie wypadku</h2>
                   <p>
-                    Nowe zgłoszenie wypadku wyróżnisią do opratym zgłoszenie i
-                    wypadku przy pracy, zoeniemientu przy pracy świacego.
+                    Nowe zgłoszenie wypadku przy pracy.
                   </p>
                   <button className="btn-primary" onClick={handleStartForm}>
                     ROZPOCZNIJ ZGŁOSZENIE (ASYSTENT)
@@ -376,99 +419,149 @@ function App() {
                   </ul>
                 </div>
               </div>
-
-              {/* Recent Reports Table */}
-              <div className="card table-card">
-                <h2>Ostatnie zgłoszenia</h2>
-                {cases.length === 0 ? (
-                  <p style={{ padding: '20px', color: '#666' }}>Brak spraw. Wygeneruj dane testowe lub dodaj nowe zgłoszenie.</p>
-                ) : (
-                  <table className="reports-table">
-                    <thead>
-                      <tr>
-                        <th>Data</th>
-                        <th>Pracownik</th>
-                        <th>Typ wypadku</th>
-                        <th>Status</th>
-                        <th>Akcja</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cases.map((c) => (
-                        <tr key={c.id}>
-                          <td>{c.data_utworzenia}</td>
-                          <td>
-                            {c.poszkodowany
-                              ? `${c.poszkodowany.imie} ${c.poszkodowany.nazwisko}`
-                              : 'Nieznany'}
-                          </td>
-                          <td>Wypadek przy pracy</td>
-                          <td>
-                            <span className="status-badge status-draft">
-                              {c.status}
-                            </span>
-                          </td>
-                          <td>
-                            <button className="btn-action">Szczegóły</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
             </>
           )}
 
           {/* Widok Dashboard Pracownika ZUS */}
           {currentView === 'dashboard' && userRole === 'pracownik_zus' && (
             <>
-              <h1 className="page-title">Panel Pracownika ZUS</h1>
-              <div className="info-box">
-                <p>Witaj w panelu pracownika ZUS. Kliknij <strong>"Wypadki przy pracy"</strong> w menu, aby przejść do recenzji formularzy.</p>
+              <h1 className="page-title">Pulpit Pracownika ZUS</h1>
+
+
+
+              <div className="card new-report-card" style={{ marginTop: '20px' }}>
+                <h2>Weryfikacja zgłoszeń</h2>
+                <p>Przejdź do listy zgłoszeń oczekujących na weryfikację merytoryczną i formalną.</p>
+                <button className="btn-primary" onClick={() => setCurrentView('zus-panel')}>
+                  PRZEJDŹ DO WERYFIKACJI
+                </button>
               </div>
             </>
           )}
 
           {/* Widok Panel Pracownika ZUS */}
           {currentView === 'zus-panel' && userRole === 'pracownik_zus' && (
-            <PanelPracownikaZUS onVerifyForm={handleVerifyForm} />
+            <PanelPracownikaZUS onVerifyForm={handleVerifyForm} onSeedData={handleSeedData} cases={cases} />
           )}
 
           {/* Widok Weryfikacji pojedynczego zgłoszenia */}
-          {currentView === 'verification' && userRole === 'pracownik_zus' && selectedFormId && (
-            <WidokWeryfikacji 
-              formId={selectedFormId}
+          {currentView === 'verification' && userRole === 'pracownik_zus' && selectedCaseId && (
+            <WidokWeryfikacji
+              formId={1}
+              caseId={selectedCaseId}
               onBack={handleBackToPanel}
-              onApprove={handleApproveForm}
+              onApprove={handleApproveCase}
               onReject={handleRejectForm}
             />
+          )}
+
+          {/* Widok Protokołu Powypadkowego */}
+          {currentView === 'protocol' && userRole === 'pracownik_zus' && selectedCaseId && (
+            <ProtocolPowypadkowy
+              caseId={selectedCaseId}
+              onBack={handleBackFromProtocol}
+              onFinalize={handleFinalizeCase}
+            />
+          )}
+
+          {/* Widok Wyboru Formularza */}
+          {currentView === 'form-selection' && (
+            <>
+              <h1 className="page-title">Wybierz sposób zgłoszenia</h1>
+              <p className="page-subtitle" style={{ color: '#666', marginBottom: '32px' }}>
+                Wybierz metodę, która najbardziej Ci odpowiada. Możesz skorzystać z prostego kreatora lub zaawansowanego formularza z AI.
+              </p>
+
+              <div className="selection-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                {/* Krok po Kroku */}
+                <div
+                  className="card selection-card"
+                  onClick={() => handleSelectMode('step-by-step')}
+                  style={{ cursor: 'pointer', transition: 'all 0.3s ease', border: '2px solid transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = '#43a047'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                >
+                  <div className="card-icon" style={{ background: '#e8f5e9', color: '#2e7d32', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                    <ListIcon />
+                  </div>
+                  <h2 style={{ marginBottom: '12px' }}>Kreator Krok po Kroku</h2>
+                  <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '24px' }}>
+                    Idealny dla początkujących. System przeprowadzi Cię przez proces zgłoszenia sekcja po sekcji, wyświetlając tylko jedno pytanie na raz.
+                  </p>
+                  <ul className="feature-list" style={{ listStyle: 'none', padding: 0, color: '#555' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <CheckIcon /> Prosty i przejrzysty interfejs
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <CheckIcon /> Pomocne opisy w każdym kroku
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckIcon /> Minimalne ryzyko pomyłki
+                    </li>
+                  </ul>
+                  <button className="btn-primary" style={{ marginTop: '24px', width: '100%' }}>
+                    WYBIERZ KREATOR
+                  </button>
+                </div>
+
+                {/* Formularz AI */}
+                <div
+                  className="card selection-card"
+                  onClick={() => handleSelectMode('classic')}
+                  style={{ cursor: 'pointer', transition: 'all 0.3s ease', border: '2px solid transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = '#43a047'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                >
+                  <div className="card-icon" style={{ background: '#e3f2fd', color: '#1565c0', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <DocumentIcon />
+                      <span style={{ position: 'absolute', top: '-4px', right: '-4px', fontSize: '10px' }}>✨</span>
+                    </div>
+                  </div>
+                  <h2 style={{ marginBottom: '12px' }}>Inteligentny Formularz AI</h2>
+                  <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '24px' }}>
+                    Klasyczny widok formularza wspierany przez Asystenta AI, który pomoże Ci opisać okoliczności zdarzenia i automatycznie uzupełni dane.
+                  </p>
+                  <ul className="feature-list" style={{ listStyle: 'none', padding: 0, color: '#555' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <CheckIcon /> Widok całego formularza
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <CheckIcon /> <strong>Asystent AI (Chat)</strong>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckIcon /> Automatyczne uzupełnianie pól
+                    </li>
+                  </ul>
+                  <button className="btn-primary" style={{ marginTop: '24px', width: '100%' }}>
+                    WYBIERZ AI
+                  </button>
+                </div>
+              </div>
+            </>
           )}
 
           {/* Widok Formularza */}
           {currentView === 'form' && (
             <>
               <h1 className="page-title">Dane poszkodowanego</h1>
-              <FormularzPoszkodowanego
-                onSubmit={handleSubmitForm}
-                onCancel={handleCancelForm}
-              />
               {formMode === 'step-by-step' ? (
-                <FormularzKrokowy 
+                <FormularzKrokowy
                   onSubmit={handleSubmitForm}
                   onCancel={handleCancelForm}
                 />
               ) : (
-                <FormularzPoszkodowanego 
+                <FormularzPoszkodowanego
                   onSubmit={handleSubmitForm}
                   onCancel={handleCancelForm}
+                  onPayerChange={handlePayerChange}
                 />
               )}
             </>
           )}
         </div>
       </main>
-    </div>
+    </div >
   )
 }
 

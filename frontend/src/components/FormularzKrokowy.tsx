@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import AIChatAssistant from './AIChatAssistant'
 import './FormularzKrokowy.css'
 
 interface Adres {
@@ -174,6 +173,7 @@ interface Field {
 
 interface Section {
   title: string
+  description?: string
   icon: string
   fields: Field[]
 }
@@ -184,20 +184,18 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   const [currentFieldIndex, setCurrentFieldIndex] = useState(0)
   const [inputValue, setInputValue] = useState('')
   const [animationClass, setAnimationClass] = useState('')
-  const [showAiChat, setShowAiChat] = useState(false)
+  const [sectionOffset, setSectionOffset] = useState(0)
 
-  const handleAiText = (text: string) => {
-    // Append the generated text to the current input
-    const newText = inputValue ? `${inputValue} ${text}` : text
-    setInputValue(newText)
-    setShowAiChat(false)
-  }
+
+
+
 
   // Dynamiczne sekcje z logiką warunkową
   const getSections = (): Section[] => {
     const sections: Section[] = [
       {
         title: 'Dane osobowe',
+        description: 'Podaj podstawowe dane identyfikacyjne osoby poszkodowanej w wypadku. Upewnij się, że dane są zgodne z dokumentem tożsamości.',
         icon: '',
         fields: [
           { name: 'pesel', label: 'Numer PESEL', type: 'text', placeholder: 'np. 90010112345', maxLength: 11, hint: '11 cyfr' },
@@ -210,6 +208,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       },
       {
         title: 'Dokument tożsamości',
+        description: 'Wybierz rodzaj dokumentu tożsamości i podaj jego serię oraz numer. Jest to niezbędne do weryfikacji tożsamości poszkodowanego.',
         icon: '',
         fields: [
           { name: 'rodzaj_dokumentu', label: 'Rodzaj dokumentu', type: 'select', options: rodzajeDokomentow },
@@ -219,6 +218,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       },
       {
         title: 'Adres zamieszkania',
+        description: 'Podaj aktualny adres zamieszkania osoby poszkodowanej. Adres ten będzie używany do celów ewidencyjnych.',
         icon: '',
         fields: [
           { name: 'adres_zamieszkania.ulica', label: 'Ulica', type: 'text', placeholder: 'np. Marszałkowska' },
@@ -230,6 +230,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       },
       {
         title: 'Adres korespondencyjny',
+        description: 'Jeśli adres do korespondencji jest inny niż zamieszkania, wypełnij poniższe pola. W przeciwnym razie zaznacz odpowiednią opcję.',
         icon: '',
         fields: [
           {
@@ -277,6 +278,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       },
       {
         title: 'Działalność',
+        description: 'Podaj dane dotyczące płatnika składek (pracodawcy lub przedsiębiorcy). NIP, nazwa firmy oraz adres są wymagane.',
         icon: '',
         fields: [
           { name: 'dzialalnosc.nip_regon', label: 'NIP lub REGON', type: 'text', placeholder: 'np. 1234567890', hint: 'NIP: 10 cyfr, REGON: 9 lub 14 cyfr' },
@@ -294,6 +296,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       },
       {
         title: 'Opis sytuacji',
+        description: 'Opisz ogólne okoliczności zdarzenia, wskaż przyczynę zewnętrzną (np. uderzenie, poślizgnięcie) oraz związek zdarzenia z wykonywaną pracą.',
         icon: '',
         fields: [
           { name: 'opis_okolicznosci', label: 'Opis okoliczności wypadku', type: 'textarea', placeholder: 'Szczegółowy opis w jakich okolicznościach doszło do wypadku...', minLength: 20 },
@@ -303,6 +306,7 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
       },
       {
         title: 'Zapis wyjaśnień poszkodowanego',
+        description: 'To najważniejsza część formularza. Szczegółowo opisz przebieg wypadku, miejsce, czas oraz skutki. Odpowiedz dokładnie na każde pytanie.',
         icon: '',
         fields: [
           { name: 'data_wypadku', label: 'Data wypadku', type: 'date' },
@@ -354,6 +358,30 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
   const currentField = currentSection.fields[currentFieldIndex]
   const totalFields = currentSection.fields.length
   const progress = ((currentFieldIndex + 1) / totalFields) * 100
+  const visibleSections = 3
+
+  const scrollSectionsLeft = () => {
+    if (sectionOffset > 0) {
+      setSectionOffset(prev => prev - 1)
+    }
+  }
+
+  const scrollSectionsRight = () => {
+    if (sectionOffset < sections.length - visibleSections) {
+      setSectionOffset(prev => prev + 1)
+    }
+  }
+
+  // Automatyczne przewijanie gdy aktywna sekcja wychodzi poza widok
+  useEffect(() => {
+    if (currentSectionIndex < sectionOffset) {
+      setSectionOffset(currentSectionIndex)
+    } else if (currentSectionIndex >= sectionOffset + visibleSections) {
+      setSectionOffset(currentSectionIndex - visibleSections + 1)
+    }
+  }, [currentSectionIndex])
+
+  const visibleSectionsArray = Array.from({ length: visibleSections }, (_, i) => sectionOffset + i).filter(index => index < sections.length)
 
   // Załaduj wartość dla bieżącego pola
   useEffect(() => {
@@ -503,19 +531,46 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
 
   return (
     <div className="form-krokowy-container">
+
+
       {/* Wskaźnik wszystkich sekcji */}
       <div className="sections-indicator">
-        {sections.map((section, index) => (
-          <div key={`section-${index}`} style={{ display: 'contents' }}>
-            <div
-              className={`progress-step ${index === currentSectionIndex ? 'active' : ''} ${index < currentSectionIndex ? 'completed' : ''}`}
-            >
-              <div className="step-number">{index + 1}</div>
-              <div className="step-label">{section.title}</div>
-            </div>
-            {index < sections.length - 1 && <div className="progress-line"></div>}
-          </div>
-        ))}
+        <button
+          type="button"
+          className="section-scroll-btn section-scroll-left"
+          onClick={scrollSectionsLeft}
+          disabled={sectionOffset === 0}
+          aria-label="Przewiń sekcje w lewo"
+        >
+          <ArrowLeftIcon />
+        </button>
+
+        <div className="sections-container">
+          {visibleSectionsArray.map((index, arrayIndex) => {
+            const section = sections[index]
+            return (
+              <div key={`section-${index}`} style={{ display: 'contents' }}>
+                <div
+                  className={`progress-step ${index === currentSectionIndex ? 'active' : ''} ${index < currentSectionIndex ? 'completed' : ''}`}
+                >
+                  <div className="step-number">{index + 1}</div>
+                  <div className="step-label">{section.title}</div>
+                </div>
+                {arrayIndex < visibleSectionsArray.length - 1 && <div className="progress-line"></div>}
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="section-scroll-btn section-scroll-right"
+          onClick={scrollSectionsRight}
+          disabled={sectionOffset >= sections.length - visibleSections}
+          aria-label="Przewiń sekcje w prawo"
+        >
+          <ArrowRightIcon />
+        </button>
       </div>
 
       {/* Progress bar dla aktualnej sekcji */}
@@ -530,6 +585,12 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
           {currentFieldIndex + 1} z {totalFields}
         </div>
       </div>
+
+      {currentSection.description && (
+        <div className="section-description">
+          <p>{currentSection.description}</p>
+        </div>
+      )}
 
       {/* Główny input */}
       <div className={`form-krokowy-content ${animationClass}`}>
@@ -565,16 +626,6 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
               rows={6}
               autoFocus
             />
-            {currentField.name === 'opis_okolicznosci' && (
-              <div className="ai-chat-trigger">
-                <button
-                  className="btn-ai-chat"
-                  onClick={() => setShowAiChat(true)}
-                >
-                  ✨ Uruchom Asystenta AI (Czat)
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <input
@@ -600,14 +651,6 @@ export default function FormularzKrokowy({ onSubmit, onCancel }: { onSubmit?: (d
         </div>
       </div>
 
-      {/* AI Chat Assistant Overlay */}
-      {showAiChat && (
-        <AIChatAssistant
-          currentText={inputValue}
-          onClose={() => setShowAiChat(false)}
-          onUseText={handleAiText}
-        />
-      )}
 
       {/* Przyciski nawigacji */}
       <div className="form-krokowy-actions">

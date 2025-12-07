@@ -51,7 +51,53 @@
   padding: 16px 40px;
   /* background-color: var(--nav-bg); */
   border-bottom: 1px solid var(--border-light);
+  gap: 16px;
+  position: relative;
+}
+
+.sections-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0;
+  flex: 1;
+  max-width: 800px;
+}
+
+.sections-container>div {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.section-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border-color);
+  background-color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.section-scroll-btn:hover:not(:disabled) {
+  background-color: var(--zus-green);
+  border-color: var(--zus-green);
+  color: white;
+}
+
+.section-scroll-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.section-scroll-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .progress-step {
@@ -60,6 +106,8 @@
   align-items: center;
   gap: 8px;
   position: relative;
+  min-width: 150px;
+  max-width: 150px;
 }
 
 .step-number {
@@ -91,6 +139,10 @@
   color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  text-align: center;
 }
 
 .progress-step.active .step-label {
@@ -108,6 +160,24 @@
   background-color: var(--border-color);
   margin: 0 16px;
   margin-bottom: 28px;
+}
+
+/* Opis sekcji */
+.section-description {
+  max-width: 600px;
+  width: 100%;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.section-description p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 /* Główny content z inputem */
@@ -254,10 +324,12 @@
 .btn-prev {
   background-color: white;
   color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+}
 
-  50% {
-    transform: translateY(-10px);
-  }
+.btn-prev:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
 }
 
 .slide-out-left {
@@ -346,12 +418,25 @@
 
   .sections-indicator {
     padding: 24px 20px;
-    flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
+  }
+
+  .sections-container {
+    max-width: calc(100% - 120px);
   }
 
   .progress-line {
-    display: none;
+    width: 40px;
+  }
+
+  .section-scroll-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .section-scroll-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .step-label {

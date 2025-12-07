@@ -1,8 +1,8 @@
+import re
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
-from datetime import date
-import re
 
 from .Adres import Adres
 
@@ -38,7 +38,7 @@ class Poszkodowany(BaseModel):
     def waliduj_telefon(cls, v):
         """Walidacja numeru telefonu - usuwa spacje i sprawdza format"""
         # Usuń spacje, myślniki i inne znaki
-        cleaned = re.sub(r'[\s\-\(\)]', '', v)
+        cleaned = re.sub(r'[\s\-()]', '', v)
 
         # Sprawdź czy zawiera tylko cyfry i opcjonalnie prefix +
         if not re.match(r'^\+?\d{9,15}$', cleaned):

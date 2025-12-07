@@ -1,16 +1,17 @@
-from fastapi import APIRouter, HTTPException, Query, status
-from typing import List, Optional
 from datetime import date
-from uuid import uuid4
+from typing import List, Optional
+from pydantic import BaseModel
 
-from backend.database.db import cases_db
-
-from backend.models.Case import Case
-from backend.models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
-from backend.models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
+from database.db import cases_db
+from fastapi import APIRouter, HTTPException, Query, status, Body
+from models.Case import Case
+from models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
+from models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
 
 router = APIRouter()
 
+class StatusUpdate(BaseModel):
+    status: str
 
 # ==========================================
 # 1. Lista spraw (Dashboard)
@@ -23,7 +24,9 @@ def get_cases(status_filter: Optional[str] = Query(None, alias="status")):
     /cases?status=Wysłano
     """
     if status_filter:
-        filtered_cases = [c for c in cases_db if c.get("status") == status_filter]
+        filtered_cases = [
+            c for c in cases_db if c.get("status") == status_filter
+        ]
         return filtered_cases
     return cases_db
 
@@ -31,7 +34,9 @@ def get_cases(status_filter: Optional[str] = Query(None, alias="status")):
 # ==========================================
 # 2. Utworzenie nowej (pustej) sprawy
 # ==========================================
-@router.post("/cases", response_model=Case, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/cases", response_model=Case, status_code=status.HTTP_201_CREATED
+)
 def create_case():
     """
     Tworzy nową, pustą sprawę i nadaje jej ID.
@@ -41,7 +46,7 @@ def create_case():
         status="W trakcie",
         wyjasnienia=None,
         zawiadomienie=None,
-        poszkodowany=None
+        poszkodowany=None,
     )
     # Zapisujemy jako słownik do "bazy"
     cases_db.append(new_case.model_dump())
@@ -59,7 +64,9 @@ def get_case_details(case_id: str):
     case_data = next((c for c in cases_db if c["id"] == case_id), None)
 
     if not case_data:
-        raise HTTPException(status_code=404, detail="Sprawa o podanym ID nie istnieje")
+        raise HTTPException(
+            status_code=404, detail="Sprawa o podanym ID nie istnieje"
+        )
 
     return case_data
 
@@ -72,16 +79,23 @@ def update_zawiadomienie(case_id: str, data: ZawiadomienieOWypadku):
     """
     Aktualizuje sekcję 'zawiadomienie' w danej sprawie.
     """
-    case_idx = next((i for i, c in enumerate(cases_db) if c["id"] == case_id), None)
+    case_idx = next(
+        (i for i, c in enumerate(cases_db) if c["id"] == case_id), None
+    )
 
     if case_idx is None:
         raise HTTPException(status_code=404, detail="Sprawa nie znaleziona")
 
     # Aktualizacja w bazie
     cases_db[case_idx]["zawiadomienie"] = data.model_dump()
-    cases_db[case_idx]["status"] = "W trakcie"  # Upewniamy się, że status to edycja
+    cases_db[case_idx][
+        "status"
+    ] = "W trakcie"  # Upewniamy się, że status to edycja
 
-    return {"message": "Zawiadomienie zaktualizowane pomyślnie", "case_id": case_id}
+    return {
+        "message": "Zawiadomienie zaktualizowane pomyślnie",
+        "case_id": case_id,
+    }
 
 
 # ==========================================
@@ -92,7 +106,9 @@ def update_wyjasnienia(case_id: str, data: ZapisWyjasnienPoszkodowanego):
     """
     Aktualizuje sekcję 'wyjasnienia' w danej sprawie.
     """
-    case_idx = next((i for i, c in enumerate(cases_db) if c["id"] == case_id), None)
+    case_idx = next(
+        (i for i, c in enumerate(cases_db) if c["id"] == case_id), None
+    )
 
     if case_idx is None:
         raise HTTPException(status_code=404, detail="Sprawa nie znaleziona")
@@ -100,40 +116,65 @@ def update_wyjasnienia(case_id: str, data: ZapisWyjasnienPoszkodowanego):
     cases_db[case_idx]["wyjasnienia"] = data.model_dump()
     cases_db[case_idx]["status"] = "W trakcie"
 
-    return {"message": "Wyjaśnienia zaktualizowane pomyślnie", "case_id": case_id}
+    return {
+        "message": "Wyjaśnienia zaktualizowane pomyślnie",
+        "case_id": case_id,
+    }
 
 
-# ==========================================
-# 6. Analiza / Walidacja (Dummy Logic)
-# ==========================================
-@router.post("/cases/{case_id}/analyze")
-def analyze_case(case_id: str):
+
+
+
+from service.event_description_llm import analyze_opinion
+
+@router.post("/cases/{case_id}/analyze-opinion")
+def analyze_case_opinion(case_id: str):
     """
-    Mock endpointu analitycznego AI.
+    Analiza kwalifikacji prawnej wypadku przez AI (Groq/Llama-3).
+    Sprawdza 4 przesłanki: nagłość, przyczyna zewn., uraz, związek z pracą.
     """
     case_data = next((c for c in cases_db if c["id"] == case_id), None)
     if not case_data:
         raise HTTPException(status_code=404, detail="Sprawa nie znaleziona")
 
-    zawiadomienie = case_data.get("zawiadomienie")
-    braki = []
-
-    if not zawiadomienie:
+    result = analyze_opinion(case_data)
+    
+    # Obsługa błędów LLM
+    if "error" in result:
+        # Możemy zwrócić 503 lub 200 z informacją o błędzie
         return {
-            "is_complete": False,
-            "status": "CRITICAL",
-            "message": "Brak wypełnionego zawiadomienia o wypadku."
+             "error": True,
+             "message": result["error"],
+             "details": {
+                "suddenness": { "met": False, "justification": "Błąd analizy AI" },
+                "external_cause": { "met": False, "justification": "Błąd analizy AI" },
+                "injury": { "met": False, "justification": "Błąd analizy AI" },
+                "work_connection": { "met": False, "justification": "Błąd analizy AI" }
+             }
         }
 
-    # Przykładowa prosta logika walidacji
-    if not zawiadomienie.get("opis_okolicznosci") or len(zawiadomienie.get("opis_okolicznosci", "")) < 50:
-        braki.append("Opis okoliczności jest zbyt krótki. Opisz dokładnie co się stało.")
+    return result
 
-    if not zawiadomienie.get("swiadkowie"):
-        braki.append("Brak świadków. Jeśli nie było świadków, system będzie wymagał dodatkowych wyjaśnień.")
 
+# ==========================================
+# 7. Aktualizacja Statusu
+# ==========================================
+@router.patch("/cases/{case_id}/status")
+def update_case_status(case_id: str, data: StatusUpdate):
+    """
+    Aktualizuje tylko status sprawy.
+    """
+    case_idx = next(
+        (i for i, c in enumerate(cases_db) if c["id"] == case_id), None
+    )
+
+    if case_idx is None:
+        raise HTTPException(status_code=404, detail="Sprawa nie znaleziona")
+
+    cases_db[case_idx]["status"] = data.status
+    
     return {
-        "is_complete": len(braki) == 0,
-        "missing_fields": braki,
-        "ai_suggestions": "Na podstawie opisu, wygląda to na uraz mechaniczny. Upewnij się, że maszyny miały aktualne przeglądy."
+        "message": "Status zaktualizowany pomyślnie",
+        "case_id": case_id,
+        "new_status": data.status
     }

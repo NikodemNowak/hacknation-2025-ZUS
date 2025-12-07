@@ -31,7 +31,7 @@ settings = Settings()
 
 # Debug - sprawdzenie czy klucz API został załadowany
 if settings.groq_api_key:
-    print(f"✅ Klucz API GROQ załadowany: {settings.groq_api_key[:10]}...")
+    print(f"Klucz API GROQ załadowany: {settings.groq_api_key[:10]}...")
 else:
-    print("⚠️ Brak klucza API GROQ w konfiguracji")
+    print("Brak klucza API GROQ w konfiguracji")
 

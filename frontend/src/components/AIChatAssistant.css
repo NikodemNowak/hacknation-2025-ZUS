@@ -76,7 +76,7 @@
 
 .message.user {
   align-self: flex-end;
-  background: #6c5ce7;
+  background: #43a047;
   color: white;
   border-bottom-right-radius: 2px;
 }
@@ -105,17 +105,22 @@
 }
 
 .ai-chat-input-area input:focus {
-  border-color: #6c5ce7;
+  border-color: #43a047;
 }
 
 .btn-send {
   padding: 0 1.2rem;
-  background: #6c5ce7;
+  background: #43a047 !important;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-send:hover {
+  background: #388e3c !important;
 }
 
 .ai-chat-footer {
@@ -129,8 +134,8 @@
   width: 100%;
   padding: 0.8rem;
   background: transparent;
-  color: #6c5ce7;
-  border: 1px solid #6c5ce7;
+  color: #43a047;
+  border: 1px solid #43a047;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
@@ -138,11 +143,18 @@
 }
 
 .btn-use-text:hover {
-  background: #6c5ce7;
+  background: #43a047;
   color: white;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

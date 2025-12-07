@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import AIChatAssistant from './AIChatAssistant'
 import './FormularzPoszkodowanego.css'
 
 interface Adres {
@@ -101,7 +102,7 @@ interface Dzialalnosc {
   numer_telefonu?: string
 }
 
-interface ExtendedFormData extends Poszkodowany {
+export interface ExtendedFormData extends Poszkodowany {
   adres_korespondencyjny?: Adres
   adres_korespondencyjny_taki_sam?: boolean
   dzialalnosc?: Dzialalnosc
@@ -118,7 +119,6 @@ interface ExtendedFormData extends Poszkodowany {
   okolicznosci_wypadku: string
   przyczyny_wypadku: string
   sekwencja_zdarzen: string
-
   opis_miejsca_wypadku: string
   czy_wypadek_podczas_obslugi_maszyn: boolean
   nazwa_maszyny?: string
@@ -186,10 +186,15 @@ const takNieOptions = [
   { value: 'nie', label: 'Nie' }
 ]
 
-export default function FormularzPoszkodowanego({ onSubmit, onCancel }: FormularzPoszkodowanegoProps) {
+export default function FormularzPoszkodowanego({ onSubmit, onCancel, onPayerChange }: FormularzPoszkodowanegoProps & { onPayerChange?: (name: string, nip: string) => void }) {
   const [formData, setFormData] = useState<ExtendedFormData>(extendedInitialFormData)
   const [currentStep, setCurrentStep] = useState(1)
+  const [stepOffset, setStepOffset] = useState(0)
+  const [showAiChat, setShowAiChat] = useState(false)
   const totalSteps = 7
+  const visibleSteps = 3
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -264,6 +269,18 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
           }
         }))
       } else {
+        // Trigger parent update for payer info
+        if (onPayerChange && (fieldName === 'nip_regon' || fieldName === 'nazwa_firmy')) {
+          const currentName = formData.dzialalnosc?.nazwa_firmy || ''
+          const currentNip = formData.dzialalnosc?.nip_regon || ''
+
+          if (fieldName === 'nazwa_firmy') {
+            onPayerChange(value, currentNip)
+          } else if (fieldName === 'nip_regon') {
+            onPayerChange(currentName, value)
+          }
+        }
+
         setFormData(prev => ({
           ...prev,
           dzialalnosc: {
@@ -322,44 +339,77 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
     }
   }
 
+  const scrollStepsLeft = () => {
+    if (stepOffset > 0) {
+      setStepOffset(prev => prev - 1)
+    }
+  }
+
+  const scrollStepsRight = () => {
+    if (stepOffset < totalSteps - visibleSteps) {
+      setStepOffset(prev => prev + 1)
+    }
+  }
+
+  // Automatyczne przewijanie gdy aktywny krok wychodzi poza widok
+  useEffect(() => {
+    if (currentStep - 1 < stepOffset) {
+      setStepOffset(currentStep - 1)
+    } else if (currentStep - 1 >= stepOffset + visibleSteps) {
+      setStepOffset(currentStep - visibleSteps)
+    }
+  }, [currentStep])
+
+  const visibleStepsArray = Array.from({ length: visibleSteps }, (_, i) => stepOffset + i + 1).filter(step => step <= totalSteps)
+
   return (
     <div className="form-container">
+
+
       {/* Progress Steps */}
       <div className="form-progress">
-        <div className={`progress-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-          <div className="step-number">1</div>
-          <div className="step-label">Dane osobowe</div>
+        <button
+          type="button"
+          className="step-scroll-btn step-scroll-left"
+          onClick={scrollStepsLeft}
+          disabled={stepOffset === 0}
+          aria-label="Przewiń kroki w lewo"
+        >
+          <ArrowLeftIcon />
+        </button>
+
+        <div className="progress-steps-container">
+          {visibleStepsArray.map((step, index) => {
+            const stepLabels = [
+              'Dane osobowe',
+              'Dokument',
+              'Adres zamieszkania',
+              'Adres korespondencyjny',
+              'Działalność',
+              'Opis sytuacji',
+              'Wyjaśnienia'
+            ]
+            return (
+              <div key={step}>
+                <div className={`progress-step ${currentStep >= step ? 'active' : ''} ${currentStep > step ? 'completed' : ''}`}>
+                  <div className="step-number">{step}</div>
+                  <div className="step-label">{stepLabels[step - 1]}</div>
+                </div>
+                {index < visibleStepsArray.length - 1 && <div className="progress-line"></div>}
+              </div>
+            )
+          })}
         </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-          <div className="step-number">2</div>
-          <div className="step-label">Dokument</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
-          <div className="step-number">3</div>
-          <div className="step-label">Adres zamieszkania</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 4 ? 'active' : ''} ${currentStep > 4 ? 'completed' : ''}`}>
-          <div className="step-number">4</div>
-          <div className="step-label">Adres korespondencyjny</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 5 ? 'active' : ''} ${currentStep > 5 ? 'completed' : ''}`}>
-          <div className="step-number">5</div>
-          <div className="step-label">Działalność</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 6 ? 'active' : ''} ${currentStep > 6 ? 'completed' : ''}`}>
-          <div className="step-number">6</div>
-          <div className="step-label">Opis sytuacji</div>
-        </div>
-        <div className="progress-line"></div>
-        <div className={`progress-step ${currentStep >= 7 ? 'active' : ''}`}>
-          <div className="step-number">7</div>
-          <div className="step-label">Wyjaśnienia</div>
-        </div>
+
+        <button
+          type="button"
+          className="step-scroll-btn step-scroll-right"
+          onClick={scrollStepsRight}
+          disabled={stepOffset >= totalSteps - visibleSteps}
+          aria-label="Przewiń kroki w prawo"
+        >
+          <ArrowRightIcon />
+        </button>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -747,6 +797,8 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
                   onChange={handleChange}
                   placeholder="np. 1234567890"
                   required
+                  pattern="^(\d{9}|\d{10}|\d{14})$"
+                  title="NIP musi składać się z 10 cyfr, REGON z 9 lub 14 cyfr"
                 />
                 <span className="field-hint">NIP: 10 cyfr, REGON: 9 lub 14 cyfr</span>
               </div>
@@ -910,9 +962,30 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
 
             <div className="form-grid">
               <div className="form-group form-group-full">
-                <label htmlFor="opis_okolicznosci">
-                  Opis okoliczności wypadku <span className="required">*</span>
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label htmlFor="opis_okolicznosci">
+                    Opis okoliczności wypadku <span className="required">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiChat(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #43a047 0%, #66bb6a 100%)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '5px 15px',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      fontSize: '0.9em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      marginBottom: '5px'
+                    }}
+                  >
+                    Uruchom Asystenta AI
+                  </button>
+                </div>
                 <textarea
                   id="opis_okolicznosci"
                   name="opis_okolicznosci"
@@ -1554,7 +1627,39 @@ export default function FormularzPoszkodowanego({ onSubmit, onCancel }: Formular
           </div>
         </div>
       </form>
+
+      {showAiChat && (
+        <AIChatAssistant
+          onClose={() => setShowAiChat(false)}
+          onUseText={(text) => {
+            setFormData(prev => ({ ...prev, opis_okolicznosci: text }))
+            setShowAiChat(false)
+          }}
+          onUpdateFormData={(data) => {
+            setFormData(prev => {
+              const newData = { ...prev }
+              if (data.rodzaj_czynnosci) newData.rodzaj_czynnosci = data.rodzaj_czynnosci
+              // Map to both Step 7 field and Step 6 description
+              if (data.okolicznosci_wypadku) {
+                newData.okolicznosci_wypadku = data.okolicznosci_wypadku
+                newData.opis_okolicznosci = data.okolicznosci_wypadku
+              }
+              if (data.przyczyny_wypadku) newData.przyczyny_wypadku = data.przyczyny_wypadku
+              if (data.sekwencja_zdarzen) newData.sekwencja_zdarzen = data.sekwencja_zdarzen
+              if (data.opis_miejsca_wypadku) newData.opis_miejsca_wypadku = data.opis_miejsca_wypadku
+              if (data.rodzaj_urazow) newData.rodzaj_urazow = data.rodzaj_urazow
+              if (data.przyczyna_zewnetrzna) newData.przyczyna_zewnetrzna = data.przyczyna_zewnetrzna
+              if (data.zwiazek_z_praca) newData.zwiazek_z_praca = data.zwiazek_z_praca
+              return newData
+            })
+          }}
+          userData={{
+            imie: formData.imie,
+            nazwisko: formData.nazwisko,
+            nip: formData.dzialalnosc?.nip_regon || ''
+          }}
+        />
+      )}
     </div>
   )
 }
-
