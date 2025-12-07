@@ -1,404 +1,349 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './ProtocolPowypadkowy.css'
 
 interface ProtocolPowypadkowyProps {
-  caseId?: string
+  caseId: string
   onBack: () => void
   onFinalize: () => void
 }
 
-const ArrowLeftIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
+interface AssessmentPoint {
+  met: boolean
+  justification: string
+}
 
-const CheckIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+interface OpinionState {
+  suddenness: AssessmentPoint
+  externalCause: AssessmentPoint
+  injury: AssessmentPoint
+  workConnection: AssessmentPoint
+  decision: 'uznanie' | 'odmowa'
+  finalJustification: string
+}
+
+const API_URL = 'http://127.0.0.1:8000'
+
+const ArrowLeftIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12.5 15L7.5 10L12.5 5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
 const PrintIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M5 7V3H15V7M5 14H3C2.46957 14 1.96086 13.7893 1.58579 13.4142C1.21071 13.0391 1 12.5304 1 12V9C1 8.46957 1.21071 7.96086 1.58579 7.58579C1.96086 7.21071 2.46957 7 3 7H17C17.5304 7 18.0391 7.21071 18.4142 7.58579C18.7893 7.96086 19 8.46957 19 9V12C19 12.5304 18.7893 13.0391 18.4142 13.4142C18.0391 13.7893 17.5304 14 17 14H15M5 11H15V17H5V11Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+    <rect x="6" y="14" width="12" height="8"></rect>
+  </svg>
+)
+
+const SparklesIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 3v18M3 12h18M7.05 7.05l9.9 9.9M7.05 16.95l9.9-9.9" />
+  </svg>
+)
+
+const CheckCircleIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 )
 
 export default function ProtocolPowypadkowy({ caseId, onBack, onFinalize }: ProtocolPowypadkowyProps) {
-  const [decyzja, setDecyzja] = useState<string>('uznanie')
+  /* State management */
+  const [, setCaseData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingAI, setLoadingAI] = useState(false)
 
-  // Mock data dla protokołu
-  const protocolData = {
-    numerProtokolu: `P/${new Date().getFullYear()}/0001`,
-    dataSporzadzenia: new Date().toLocaleDateString('pl-PL'),
-    numerSprawy: caseId || 'ZUS/2025/001',
-    
-    poszkodowany: {
-      imieNazwisko: 'Jan Kowalski',
-      pesel: '85010112345',
-      dataUrodzenia: '01.01.1985'
-    },
-    
-    platnik: {
-      nazwa: 'Firma Budowlana "Kowalski i Syn" Sp. z o.o.',
-      nip: '1234567890',
-      adres: 'ul. Główna 15, 34-300 Żywiec'
-    },
-    
-    wypadek: {
-      data: '15.11.2023',
-      godzina: '10:15',
-      miejsce: 'Hala produkcyjna nr 2, stanowisko montażu',
-      opis: 'W trakcie wykonywania prac montażowych, poszkodowany doznał urazu prawej ręki w wyniku kontaktu z ostrzem piły tarczowej. Uraz nastąpił podczas cięcia elementu drewnianego, gdy materiał się zaklinował i poszkodowany próbował go uwolnić bez wyłączenia urządzenia.'
-    },
-    
-    ocenaBHP: {
-      instruktaz: 'Poszkodowany przeszedł instruktaż BHP w dniu 05.01.2023',
-      szkolenia: 'Szkolenie okresowe BHP przeprowadzone 10.01.2023',
-      ocenaRyzyka: 'Na stanowisku istniała aktualna ocena ryzyka zawodowego',
-      naruszenia: [
-        'Brak zastosowania ochraniaczy na maszynie w momencie wypadku',
-        'Nieprzestrzeganie procedury wyłączania urządzenia przed interwencją',
-        'Brak środków ochrony indywidualnej (rękawice antyprzecięciowe)'
-      ]
-    },
-    
-    skutki: {
-      rodzajUrazu: 'Głębokie cięcie prawej ręki z uszkodzeniem ścięgien',
-      niezdolnosc: 'od 15.11.2023 do 28.02.2024 (105 dni)',
-      placowka: 'Szpital Powiatowy w Żywcu, Oddział Chirurgii'
-    },
-    
-    swiadkowie: [
-      { imieNazwisko: 'Piotr Nowak', stanowisko: 'Brygadzista' },
-      { imieNazwisko: 'Marek Wiśniewski', stanowisko: 'Pracownik produkcji' }
-    ],
-    
-    ustaleniaKomisji: [
-      'Wypadek został spowodowany przez nieprzestrzeganie przez poszkodowanego procedur bezpieczeństwa',
-      'Maszyna była sprawna technicznie, posiadała aktualne przeglądy',
-      'Pracodawca zapewnił odpowiednie środki ochrony indywidualnej',
-      'Poszkodowany został przeszkolony w zakresie BHP',
-      'Stanowisko pracy posiadało aktualną ocenę ryzyka zawodowego'
-    ],
-    
-    przyczyny: {
-      bezposrednia: 'Próba usunięcia zaklinowanego materiału bez wyłączenia maszyny',
-      podstawowa: 'Nieprzestrzeganie procedur bezpieczeństwa przez poszkodowanego',
-      organizacyjne: 'Brak skutecznego nadzoru nad przestrzeganiem procedur BHP'
-    },
-    
-    zalecenia: [
-      'Przeprowadzenie dodatkowego szkolenia dla wszystkich pracowników obsługujących maszyny z ostrymi narzędziami',
-      'Wzmożenie nadzoru nad przestrzeganiem procedur bezpieczeństwa',
-      'Umieszczenie dodatkowych instrukcji bezpieczeństwa przy stanowiskach pracy',
-      'Przeprowadzenie kontroli stanu i dostępności środków ochrony indywidualnej'
-    ],
-    
-    komisja: [
-      { imieNazwisko: 'Anna Nowak', funkcja: 'Przewodnicząca komisji - Inspektor BHP' },
-      { imieNazwisko: 'Tomasz Kowalczyk', funkcja: 'Członek komisji - Kierownik produkcji' },
-      { imieNazwisko: 'Maria Lewandowska', funkcja: 'Członek komisji - Przedstawiciel pracowników' }
-    ]
+  const [opinion, setOpinion] = useState<OpinionState>({
+    suddenness: { met: false, justification: '' },
+    externalCause: { met: false, justification: '' },
+    injury: { met: false, justification: '' },
+    workConnection: { met: false, justification: '' },
+    decision: 'uznanie',
+    finalJustification: ''
+  })
+
+  useEffect(() => {
+    fetchCaseData()
+  }, [caseId])
+
+  const fetchCaseData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/cases/${caseId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setCaseData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching case:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handleGenerateValues = async () => {
+    if (!caseId) return
+    setLoadingAI(true)
+    try {
+      const response = await fetch(`${API_URL}/api/cases/${caseId}/analyze-opinion`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+
+        if (result.error) {
+          alert('Błąd analizy: ' + result.message)
+          return
+        }
+
+        setOpinion({
+          suddenness: result.details.suddenness,
+          externalCause: result.details.external_cause,
+          injury: result.details.injury,
+          workConnection: result.details.work_connection,
+          decision: result.final_decision,
+          finalJustification: result.final_justification || "Brak uzasadnienia."
+        })
+
+        alert('Analiza zakończona. Sprawdź proponowaną opinię.')
+      } else {
+        alert('Błąd serwera podczas analizy')
+      }
+    } catch (e) {
+      console.error(e)
+      alert("Błąd połączenia z serwerem.")
+    } finally {
+      setLoadingAI(false)
+    }
   }
 
-  const handleFinalize = () => {
-    onFinalize()
-  }
+  const handlePrint = () => window.print()
+
+  if (loading) return <div className="p-10 text-center">Ładowanie danych sprawy...</div>
 
   return (
     <div className="protocol-container">
-      {/* Pasek nawigacji */}
+      {/* Navigation */}
       <div className="nav-header">
         <button className="btn-back" onClick={onBack}>
           <ArrowLeftIcon /> Wróć
         </button>
         <div className="status-actions">
-          <button className="btn-print" onClick={handlePrint}>
-            <PrintIcon /> Drukuj
+          <button
+            className="btn-ai"
+            onClick={handleGenerateValues}
+            disabled={loadingAI}
+            style={{ background: loadingAI ? '#ccc' : '#43a047', color: 'white', marginRight: '10px', cursor: loadingAI ? 'wait' : 'pointer' }}
+          >
+            <SparklesIcon /> {loadingAI ? 'Analizuję...' : 'Analizuj AI'}
           </button>
-          <button className="btn-approve" onClick={handleFinalize}>
-            <CheckIcon /> Finalizuj sprawę
+          <button className="btn-print" onClick={handlePrint}>
+            <PrintIcon /> Drukuj / PDF
+          </button>
+          <button className="btn-approve" onClick={onFinalize}>
+            <CheckCircleIcon /> Zatwierdź Opinię
           </button>
         </div>
       </div>
 
-      {/* Dokument protokołu */}
       <div className="document-sheet">
-        
-        {/* Nagłówek ZUS */}
+        {/* Doc Header */}
         <div className="doc-header">
           <div className="zus-logo">ZAKŁAD UBEZPIECZEŃ SPOŁECZNYCH</div>
           <div className="doc-meta">
-            <div>Data sporządzenia: <strong>{protocolData.dataSporzadzenia}</strong></div>
-            <div>Nr protokołu: <strong>{protocolData.numerProtokolu}</strong></div>
+            <div>Nr sprawy: <strong>{caseId}</strong></div>
+            <div>Data: <strong>{new Date().toLocaleDateString('pl-PL')}</strong></div>
           </div>
         </div>
 
-        <h1 className="doc-title">PROTOKÓŁ POWYPADKOWY</h1>
-        <h2 className="doc-subtitle">Ustalenie okoliczności i przyczyn wypadku przy pracy</h2>
+        <h1 className="doc-title">OPINIA O PRAWNEJ KWALIFIKACJI ZDARZENIA</h1>
+        <h2 className="doc-subtitle">Karta analizy wypadku przy pracy (dla urzędnika ZUS)</h2>
 
-        {/* Pkt 1: Dane podstawowe */}
+        {/* 1. Completeness */}
         <div className="doc-section">
           <div className="numbered-item">
             <span className="num">1.</span>
             <div className="content">
-              <div className="form-label">Dane podstawowe sprawy:</div>
+              <div className="form-label">Analiza kompletności dokumentacji:</div>
               <div className="form-value-box">
-                <strong>Numer sprawy:</strong> {protocolData.numerSprawy}<br/>
-                <strong>Data sporządzenia protokołu:</strong> {protocolData.dataSporzadzenia}
+                <div className="check-item">☑ Zawiadomienie o wypadku</div>
+                <div className="check-item">☑ Wyjaśnienia poszkodowanego</div>
+                <div className="check-item">☑ Dokumentacja medyczna</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Pkt 2: Poszkodowany */}
+        {/* 2. Assessment of 4 Pillars */}
         <div className="doc-section">
+          <h3 style={{ marginLeft: '40px', marginBottom: '15px', color: '#333' }}>Ocena elementów definicji wypadku:</h3>
+
+          {/* Nagłość */}
           <div className="numbered-item">
-            <span className="num">2.</span>
+            <span className="num">2a.</span>
             <div className="content">
-              <div className="form-label">Dane poszkodowanego:</div>
-              <div className="form-value-box">
-                <strong>Imię i nazwisko:</strong> {protocolData.poszkodowany.imieNazwisko}<br/>
-                <strong>PESEL:</strong> {protocolData.poszkodowany.pesel}<br/>
-                <strong>Data urodzenia:</strong> {protocolData.poszkodowany.dataUrodzenia}
+              <div className="form-label">Nagłość zdarzenia:</div>
+              <div className="opinion-row">
+                <div className={`status-pill ${opinion.suddenness.met ? 'met' : 'not-met'}`}>
+                  {opinion.suddenness.met ? 'SPEŁNIONO' : 'NIE SPEŁNIONO'}
+                </div>
               </div>
+              <textarea
+                className="opinion-textarea"
+                value={opinion.suddenness.justification}
+                onChange={e => setOpinion(prev => ({ ...prev, suddenness: { ...prev.suddenness, justification: e.target.value } }))}
+                placeholder="Uzasadnienie nagłości..."
+              />
+            </div>
+          </div>
+
+          {/* Przyczyna Zewnętrzna */}
+          <div className="numbered-item">
+            <span className="num">2b.</span>
+            <div className="content">
+              <div className="form-label">Przyczyna zewnętrzna:</div>
+              <div className="opinion-row">
+                <div className={`status-pill ${opinion.externalCause.met ? 'met' : 'not-met'}`}>
+                  {opinion.externalCause.met ? 'SPEŁNIONO' : 'NIE SPEŁNIONO'}
+                </div>
+              </div>
+              <textarea
+                className="opinion-textarea"
+                value={opinion.externalCause.justification}
+                onChange={e => setOpinion(prev => ({ ...prev, externalCause: { ...prev.externalCause, justification: e.target.value } }))}
+                placeholder="Uzasadnienie przyczyny zewnętrznej..."
+              />
+            </div>
+          </div>
+
+          {/* Uraz */}
+          <div className="numbered-item">
+            <span className="num">2c.</span>
+            <div className="content">
+              <div className="form-label">Skutek w postaci urazu:</div>
+              <div className="opinion-row">
+                <div className={`status-pill ${opinion.injury.met ? 'met' : 'not-met'}`}>
+                  {opinion.injury.met ? 'SPEŁNIONO' : 'NIE SPEŁNIONO'}
+                </div>
+              </div>
+              <textarea
+                className="opinion-textarea"
+                value={opinion.injury.justification}
+                onChange={e => setOpinion(prev => ({ ...prev, injury: { ...prev.injury, justification: e.target.value } }))}
+                placeholder="Uzasadnienie urazu..."
+              />
+            </div>
+          </div>
+
+          {/* Związek z pracą */}
+          <div className="numbered-item">
+            <span className="num">2d.</span>
+            <div className="content">
+              <div className="form-label">Związek z pracą / działalnością:</div>
+              <div className="opinion-row">
+                <div className={`status-pill ${opinion.workConnection.met ? 'met' : 'not-met'}`}>
+                  {opinion.workConnection.met ? 'SPEŁNIONO' : 'NIE SPEŁNIONO'}
+                </div>
+              </div>
+              <textarea
+                className="opinion-textarea"
+                value={opinion.workConnection.justification}
+                onChange={e => setOpinion(prev => ({ ...prev, workConnection: { ...prev.workConnection, justification: e.target.value } }))}
+                placeholder="Uzasadnienie związku z pracą..."
+              />
             </div>
           </div>
         </div>
 
-        {/* Pkt 3: Płatnik składek */}
+        {/* 3. Decision */}
         <div className="doc-section">
           <div className="numbered-item">
             <span className="num">3.</span>
             <div className="content">
-              <div className="form-label">Płatnik składek (pracodawca):</div>
-              <div className="form-value-box">
-                <strong>Nazwa:</strong> {protocolData.platnik.nazwa}<br/>
-                <strong>NIP:</strong> {protocolData.platnik.nip}<br/>
-                <strong>Adres:</strong> {protocolData.platnik.adres}
-              </div>
-            </div>
-          </div>
-        </div>
+              <div className="form-label">Kwalifikacja prawna (Decyzja):</div>
 
-        {/* Pkt 4: Okoliczności wypadku */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">4.</span>
-            <div className="content">
-              <div className="form-label">Okoliczności wypadku:</div>
-              <div className="form-value-box">
-                <strong>Data wypadku:</strong> {protocolData.wypadek.data}<br/>
-                <strong>Godzina wypadku:</strong> {protocolData.wypadek.godzina}<br/>
-                <strong>Miejsce wypadku:</strong> {protocolData.wypadek.miejsce}
-              </div>
-              <div className="form-label mt-2">Opis zdarzenia:</div>
-              <div className="form-value-box description-box">
-                {protocolData.wypadek.opis}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pkt 5: Ocena BHP */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">5.</span>
-            <div className="content">
-              <div className="form-label">Ocena stanu bezpieczeństwa i higieny pracy:</div>
-              <div className="form-value-box">
-                <strong>Instruktaż stanowiskowy:</strong> {protocolData.ocenaBHP.instruktaz}<br/>
-                <strong>Szkolenia BHP:</strong> {protocolData.ocenaBHP.szkolenia}<br/>
-                <strong>Ocena ryzyka zawodowego:</strong> {protocolData.ocenaBHP.ocenaRyzyka}
-              </div>
-              <div className="form-label mt-2">Stwierdzone naruszenia przepisów BHP:</div>
-              <div className="form-value-box">
-                {protocolData.ocenaBHP.naruszenia.map((naruszenie, idx) => (
-                  <div key={idx}>• {naruszenie}</div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pkt 6: Skutki wypadku */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">6.</span>
-            <div className="content">
-              <div className="form-label">Skutki wypadku:</div>
-              <div className="form-value-box">
-                <strong>Rodzaj urazu:</strong> {protocolData.skutki.rodzajUrazu}<br/>
-                <strong>Niezdolność do pracy:</strong> {protocolData.skutki.niezdolnosc}<br/>
-                <strong>Miejsce udzielenia pomocy:</strong> {protocolData.skutki.placowka}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pkt 7: Świadkowie */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">7.</span>
-            <div className="content">
-              <div className="form-label">Świadkowie zdarzenia:</div>
-              <div className="form-value-box">
-                {protocolData.swiadkowie.map((swiadek, idx) => (
-                  <div key={idx}>
-                    {idx + 1}. {swiadek.imieNazwisko} - {swiadek.stanowisko}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pkt 8: Ustalenia komisji */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">8.</span>
-            <div className="content">
-              <div className="form-label">Ustalenia komisji powypadkowej:</div>
-              <div className="form-value-box">
-                {protocolData.ustaleniaKomisji.map((ustalenie, idx) => (
-                  <div key={idx} style={{ marginBottom: '8px' }}>
-                    {idx + 1}. {ustalenie}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pkt 9: Analiza przyczyn */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">9.</span>
-            <div className="content">
-              <div className="form-label">Analiza przyczyn wypadku:</div>
-              <div className="form-value-box">
-                <strong>Przyczyna bezpośrednia:</strong><br/>
-                {protocolData.przyczyny.bezposrednia}
-              </div>
-              <div className="form-value-box mt-2">
-                <strong>Przyczyna podstawowa:</strong><br/>
-                {protocolData.przyczyny.podstawowa}
-              </div>
-              <div className="form-value-box mt-2">
-                <strong>Przyczyny organizacyjne:</strong><br/>
-                {protocolData.przyczyny.organizacyjne}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pkt 10: Decyzja */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">10.</span>
-            <div className="content">
-              <div className="form-label">Kwalifikacja zdarzenia:</div>
               <div className="decision-box">
-                <label className={`decision-option ${decyzja === 'uznanie' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="decyzja"
-                    value="uznanie"
-                    checked={decyzja === 'uznanie'}
-                    onChange={(e) => setDecyzja(e.target.value)}
-                  />
+                <label className={`decision-option ${opinion.decision === 'uznanie' ? 'selected' : ''}`}>
+                  <input type="radio" name="decyzja" value="uznanie" checked={opinion.decision === 'uznanie'} onChange={() => setOpinion(p => ({ ...p, decision: 'uznanie' }))} />
                   <div className="decision-content">
                     <div className="decision-title">✓ UZNANIE ZA WYPADEK PRZY PRACY</div>
-                    <div className="decision-desc">
-                      Zdarzenie spełnia definicję wypadku przy pracy zgodnie z art. 3 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym z tytułu wypadków przy pracy i chorób zawodowych.
-                    </div>
                   </div>
                 </label>
-                <label className={`decision-option rejection ${decyzja === 'odmowa' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="decyzja"
-                    value="odmowa"
-                    checked={decyzja === 'odmowa'}
-                    onChange={(e) => setDecyzja(e.target.value)}
-                  />
+
+                <label className={`decision-option rejection ${opinion.decision === 'odmowa' ? 'selected' : ''}`}>
+                  <input type="radio" name="decyzja" value="odmowa" checked={opinion.decision === 'odmowa'} onChange={() => setOpinion(p => ({ ...p, decision: 'odmowa' }))} />
                   <div className="decision-content">
-                    <div className="decision-title">✗ ODMOWA UZNANIA ZA WYPADEK PRZY PRACY</div>
-                    <div className="decision-desc">
-                      Zdarzenie nie spełnia przesłanek wypadku przy pracy określonych w przepisach prawa.
-                    </div>
+                    <div className="decision-title">✗ ODMOWA UZNANIA</div>
                   </div>
                 </label>
               </div>
-              {decyzja === 'uznanie' && (
-                <div className="form-value-box mt-2" style={{ backgroundColor: '#e8f5e9' }}>
-                  <strong>Uzasadnienie:</strong> Wypadek nastąpił podczas wykonywania obowiązków służbowych, w miejscu pracy, w godzinach pracy. Istnieje związek przyczynowo-skutkowy między wykonywaną pracą a powstałym urazem.
-                </div>
-              )}
-              {decyzja === 'odmowa' && (
-                <div className="form-value-box mt-2" style={{ backgroundColor: '#ffebee' }}>
-                  <strong>Uzasadnienie odmowy:</strong> Po przeanalizowaniu okoliczności zdarzenia komisja ustaliła, że nie zostały spełnione przesłanki określone w art. 3 ustawy o ubezpieczeniu społecznym z tytułu wypadków przy pracy. Zdarzenie nie nastąpiło w związku z wykonywaniem zwykłych czynności lub poleceń przełożonych.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
 
-        {/* Pkt 11: Zalecenia */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">11.</span>
-            <div className="content">
-              <div className="form-label">Zalecenia profilaktyczne:</div>
-              <div className="form-value-box">
-                {protocolData.zalecenia.map((zalecenie, idx) => (
-                  <div key={idx} style={{ marginBottom: '8px' }}>
-                    {idx + 1}. {zalecenie}
-                  </div>
-                ))}
+              <div className="form-label mt-2">Uzasadnienie stanowiska:</div>
+              <textarea
+                className="opinion-textarea large"
+                value={opinion.finalJustification}
+                onChange={e => setOpinion(prev => ({ ...prev, finalJustification: e.target.value }))}
+                placeholder="Szczegółowe uzasadnienie decyzji..."
+              />
+
+              <div className="legal-basis">
+                <strong>Podstawa prawna:</strong> Art. 3 ust. 3 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym z tytułu wypadków przy pracy i chorób zawodowych (Dz.U. z 2022 r. poz. 2189).
               </div>
             </div>
           </div>
         </div>
 
-        {/* Pkt 12: Komisja */}
-        <div className="doc-section">
-          <div className="numbered-item">
-            <span className="num">12.</span>
-            <div className="content">
-              <div className="form-label">Skład komisji powypadkowej:</div>
-              <div className="form-value-box">
-                {protocolData.komisja.map((czlonek, idx) => (
-                  <div key={idx} style={{ marginBottom: '10px' }}>
-                    <strong>{czlonek.imieNazwisko}</strong><br/>
-                    {czlonek.funkcja}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stopka z podpisem */}
+        {/* Footer */}
         <div className="doc-footer">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-            <div className="signature-box">
-              <div className="signature-line"></div>
-              <div className="sign-line">
-                {protocolData.komisja[0].imieNazwisko}<br/>
-                <small>{protocolData.komisja[0].funkcja}</small>
-              </div>
-            </div>
+          <div className="signature-box right">
+            <div className="sign-line">Podpis pracownika ZUS</div>
           </div>
         </div>
 
       </div>
+
+      <style>{`
+        .opinion-textarea {
+          width: 100%;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 8px;
+          min-height: 60px;
+          margin-top: 8px;
+          font-family: inherit;
+        }
+        .opinion-textarea.large {
+          min-height: 120px;
+        }
+        .status-pill {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 99px;
+          font-weight: bold;
+          font-size: 0.9em;
+        }
+        .status-pill.met {
+          background: #e8f5e9;
+          color: #2e7d32;
+        }
+        .status-pill.not-met {
+          background: #ffebee;
+          color: #c62828;
+        }
+        .check-item {
+          margin-bottom: 4px;
+        }
+        .legal-basis {
+           margin-top: 15px;
+           font-size: 0.85em;
+           color: #666;
+           border-top: 1px solid #eee;
+           padding-top: 10px;
+        }
+      `}</style>
     </div>
   )
 }

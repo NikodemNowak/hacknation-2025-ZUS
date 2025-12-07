@@ -5,6 +5,14 @@ KRYTERIA_WYPADKU = [
     "Związek z pracą (Działalność gospodarcza)",
 ]
 
+EXTRACTION_PROMPT_RULES = """
+    FORMATOWANIE I STYL:
+    1. Używaj PEŁNYCH ZDAŃ przy wypełnianiu pól tekstowych (okoliczności, przyczyny, opis).
+    2. PODMIOT: Używaj sformułowania "Osoba poszkodowana" lub formy bezosobowej.
+    3. ZAKAZ UŻYWANIA PIERWSZEJ OSOBY (nie pisz "upadłem", pisz "Osoba poszkodowana upadła").
+    4. Zachowaj formalny, urzędowy styl wypowiedzi.
+"""
+
 DEFINICJE_SZCZEGOLOWE = {
     "Nagłość zdarzenia": """
     Zgodnie z definicją ZUS:
@@ -92,6 +100,8 @@ AI_EXTRACT_KEYS = [
     "opis_miejsca_wypadku",
     "rodzaj_urazow",
     "swiadkowie",
+    "przyczyna_zewnetrzna",
+    "zwiazek_z_praca"
 ]
 
 CHECKLISTA_PYTAN = {
@@ -102,8 +112,54 @@ CHECKLISTA_PYTAN = {
     "opis_miejsca_wypadku": "Warunki w miejscu wypadku (np. oświetlenie, stan nawierzchni, pogoda - jeśli na zewnątrz).",
     "rodzaj_urazow": "Jakich obrażeń doznał poszkodowany? (propozycja na podstawie znanych faktów).",
     "swiadkowie": "Czy byli naoczni świadkowie zdarzenia? (Jeśli tak - imiona i nazwiska).",
+    "przyczyna_zewnetrzna": "Jaka była przyczyna zewnętrzna zdarzenia? (coś spoza organizmu, co spowodowało wypadek)",
+    "zwiazek_z_praca": "Jaki jest związek zdarzenia z pracą? (zwykłe czynności, polecenie, w drodze itp.)"
 }
 
 
 def get_flat_checklist_keys():
     return AI_EXTRACT_KEYS
+
+OPINION_ANALYSIS_PROMPT = """
+Jesteś ekspertem orzecznikiem ZUS oraz specjalistą ds. BHP. Twoim zadaniem jest przeanalizowanie zgromadzonej dokumentacji powypadkowej i wydanie opinii, czy zdarzenie kwalifikuje się jako WYPADEK PRZY PRACY zgodnie z ustawą wypadkową.
+
+Otrzymasz dane z formularza "zawiadomienie" oraz "wyjasnienia".
+
+MUSISZ zweryfikować 4 KLUCZOWE WARUNKI (wszystkie muszą wystąpić łącznie):
+
+1. NAGŁOŚĆ
+   - Czy zdarzenie było nagłe? (czy trwało nie dłużej niż jedną dniówkę roboczą?)
+   - Przykłady: upadek, uderzenie, wybuch, porażenie, nagłe pogorszenie stanu zdrowia wywołane czynnikiem zewnętrznym.
+
+2. PRZYCZYNA ZEWNĘTRZNA
+   - Czy zadziałał czynnik spoza organizmu poszkodowanego?
+   - Przykłady: maszyna, śliska powierzchnia, siły natury, inna osoba, prąd, chemikalia.
+   - UWAGA: Stres, wysiłek, nadmierne obciążenie mogą być przyczyną zewnętrzną, jeśli wykraczały poza typowe normy dla danego stanowiska.
+
+3. URAZ (lub śmierć)
+   - Czy nastąpiło uszkodzenie tkanek ciała lub narządów? (skaleczenie, złamanie, zawał serca wywołany stresem/wysiłkiem, psychiczny uraz).
+   - Musi być potwierdzony (choćby opisem w wyjaśnieniach).
+
+4. ZWIĄZEK Z PRACĄ
+   - Czy zdarzenie nastąpiło podczas wykonywania zwykłych czynności związanych z prowadzeniem działalności?
+   - Związek przyczynowy, czasowy, miejscowy lub funkcjonalny.
+
+ZADANIE:
+Zwróć wynik w formacie JSON (bez markdowna ```json) zawierający:
+{
+  "details": {
+    "suddenness": { "met": true/false, "justification": "..." },
+    "external_cause": { "met": true/false, "justification": "..." },
+    "injury": { "met": true/false, "justification": "..." },
+    "work_connection": { "met": true/false, "justification": "..." }
+  },
+  "completeness_check": {
+     "missing_info": ["lista braków" lub pusta lista], 
+     "is_complete": true/false
+  },
+  "final_decision": "uznanie" | "odmowa",
+  "final_justification": "Podsumowanie dlaczego uznano lub odmówiono. Odwołaj się do niespełnionych warunków w przypadku odmowy."
+}
+
+Pamiętaj: Decyzja "uznanie" TYLKO jeśli WSZYSTKIE 4 warunki są "met": true. W przeciwnym razie "odmowa".
+"""

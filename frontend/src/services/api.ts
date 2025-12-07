@@ -43,6 +43,21 @@ export const updateWyjasnienia = async (caseId: string, data: any) => {
     return response.json();
 };
 
+export const updateCaseStatus = async (caseId: string, status: string) => {
+    const response = await fetch(`${API_URL}/api/cases/${caseId}/status`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+    });
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Failed to update status: ${errorBody}`);
+    }
+    return response.json();
+};
+
 export const submitFullForm = async (formData: ExtendedFormData) => {
     // 1. Create a new case
     const newCase = await createCase();

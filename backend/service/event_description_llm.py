@@ -2,9 +2,8 @@ import json
 from typing import Any, Dict, List
 
 from config import settings
-from prompts.constants import CHECKLISTA_PYTAN
+from prompts.constants import CHECKLISTA_PYTAN, EXTRACTION_PROMPT_RULES, OPINION_ANALYSIS_PROMPT
 
-# LLM Congif
 try:
     from groq import Groq
 
@@ -17,7 +16,6 @@ except ImportError:
     client = None
 
 
-# Send request to LLM API
 def call_llm_api(
     system_prompt: str, user_prompt: str, expect_json: bool = True
 ) -> str:
@@ -47,7 +45,6 @@ def call_llm_api(
         return "{}" if expect_json else ""
 
 
-# Extract information from text using LLM
 def extract_info_from_text(
     current_checklist: Dict[str, Any], history_str: str
 ) -> Dict[str, Any]:
@@ -65,38 +62,32 @@ def extract_info_from_text(
     {json.dumps(current_checklist, ensure_ascii=False)}
 
     ZASADY:
-    1. Przeanalizuj CAŁĄ historię rozmowy, nie tylko ostatnią wiadomość.
-    2. Jeśli użytkownik podał informację pasującą do pola -> WPISZ JĄ (zachowaj szczegóły).
-    3. Jeśli użytkownik zaprzeczył (np. "nie było świadków") -> wpisz "BRAK" lub "NIE DOTYCZY".
-    4. Jeśli pole jest już wypełnione, NIE ZMIENIAJ GO, chyba że użytkownik wyraźnie koryguje dane.
-    5. Puste pola (null) pozostaw jako null jeśli nie ma informacji.
-    6. Zwróć CAŁY zaktualizowany obiekt JSON z WSZYSTKIMI polami checklisty.
-    7. Zachowaj klucze dokładnie takie same jak w oryginalnej checkliście.
+    1. Przeanalizuj CAŁĄ historię rozmowy.
+    2. Jeśli użytkownik podał informację -> WPISZ JĄ.
+    3. Jeśli zaprzeczył -> wpisz "BRAK".
+    4. Nie zmieniaj istniejących danych bez korygowania przez użytkownika.
+    5. Zwróć zaktualizowany JSON.
 
-      SZCZEGÓŁOWE WYTYCZNE DLA PÓL (BARDZO WAŻNE):
+    {EXTRACTION_PROMPT_RULES}
+
+      SZCZEGÓŁOWE WYTYCZNE:
 
     A. "rodzaj_czynnosci":
-       - NIE wpisuj słowa "praca" ani "wykonywanie obowiązków". To zbyt ogólne.
-       - Wpisz KONKRETNĄ czynność fizyczną, np.: "wchodzenie po schodach", "obsługa maszyny", "przenoszenie paczek", "siedzenie przy biurku".
-       - Jeśli użytkownik napisał "przewróciłem się na schodach", czynnością było "przemieszczanie się po schodach".
+       - Konkretna czynność fizyczna (np. wchodzenie po schodach).
 
     B. "okolicznosci_wypadku":
-       - Opisz krótko kontekst sytuacyjny, np. "poślizgnięcie się na mokrej nawierzchni podczas schodzenia".
+       - Krótki opis kontekstu.
 
     C. "sekwencja_zdarzen":
-       - Musi to być ciąg przyczynowo-skutkowy, najlepiej oddziel krótko opisane wydarzenia po strzałkach (np. Wejście na schody -> Potknięcie się -> Upadek i uraz).
-       - Jeśli użytkownik podał tylko skutek (upadłem), a nie przyczynę (dlaczego?), zostaw to pole null lub wpisz tylko to co pewne.
+       - Ciąg przyczynowo-skutkowy.
 
     D. "opis_miejsca_wypadku":
-       - Wyciągnij cechy otoczenia jeśli zostały sprecyzowane: "mokra podłoga", "ciemna klatka schodowa", "nierówne stopnie".
-       - Jeśli użytkownik napisał tylko "schody", wpisz "schody w miejscu pracy".
+       - Cechy otoczenia.
 
-    E. Pola logiczne (BHP, Maszyny, Świadkowie):
-       - Jeśli użytkownik nie wspomniał o temacie -> ZOSTAW null.
-       - Wpisz "NIE DOTYCZY" lub "BRAK" tylko jeśli użytkownik wyraźnie zaprzeczył.
+    E. Pola logiczne:
+       - Zostaw null jeśli brak wzmianki.
 
-
-    WAŻNE: Odpowiedz TYLKO poprawnym JSONem, bez dodatkowego tekstu.
+    WAŻNE: Odpowiedz TYLKO JSONem.
     """
 
     response_json_str = ""
@@ -106,15 +97,12 @@ def extract_info_from_text(
         )
 
         if not response_json_str or response_json_str == "{}":
-            print("⚠️ LLM zwrócił pusty obiekt")
             return current_checklist
 
         updated_data = json.loads(response_json_str)
 
-        # Update only fileds, wchich LLM did this time
         for key, value in updated_data.items():
             if key in current_checklist:
-                # Update with Aktualizuj jeśli wartość nie jest pusta i nie jest None
                 if value and value not in [None, "", "null"]:
                     current_checklist[key] = value
 
@@ -122,8 +110,6 @@ def extract_info_from_text(
 
     except json.JSONDecodeError as e:
         print(f"❌ Błąd parsowania JSON z LLM: {e}")
-        if 'response_json_str' in locals():
-            print(f"Otrzymana odpowiedź: {response_json_str[:300]}...")
         return current_checklist
     except Exception as e:
         print(f"❌ Nieoczekiwany błąd w extract_info_from_text: {e}")
@@ -136,16 +122,14 @@ def generate_next_question(missing_fields: List[str], history_str: str) -> str:
         return "Dziękuję! Zebrałem wszystkie niezbędne informacje. Czy chcesz coś jeszcze dodać przed zapisaniem?"
 
     system_prompt = f"""
-    Jesteś urzędnikiem ZUS przyjmującym zgłoszenie wypadku.
-    Brakuje nam informacji w polach: {missing_fields}.
+    Jesteś urzędnikiem ZUS.
+    Brakuje informacji w polach: {missing_fields}.
 
-    TWOJA BAZA WIEDZY (DEFINICJE PRAWNE):
+    BAZA WIEDZY:
     {json.dumps(CHECKLISTA_PYTAN, ensure_ascii=False)}
 
     ZADANIE:
-    Zadaj JEDNO uprzejme, konkretne pytanie, aby uzyskać informację do pola: "{missing_fields[0]}".
-    Opieraj się na definicjach prawnych (np. pytając o nagłość, dopytaj czy zdarzenie było nagłe czy trwało długo).
-    Odpowiedz TYLKO pytaniem, bez dodatkowych komentarzy.
+    Zadaj JEDNO uprzejme pytanie o: "{missing_fields[0]}".
     """
 
     try:
@@ -158,7 +142,6 @@ def generate_next_question(missing_fields: List[str], history_str: str) -> str:
         if response and response.strip():
             return response.strip()
         else:
-            # Fallback
             return f"Proszę podać informację dotyczącą: {missing_fields[0]}?"
 
     except Exception as e:
@@ -170,15 +153,12 @@ def process_event_step(
     user_input: str, checklist_state: Dict[str, Any], history: str
 ) -> Dict[str, Any]:
 
-    # Add user input to history
     updated_history = history + f"\nUser: {user_input}"
 
-    # Extract new info from text
     new_checklist_state = extract_info_from_text(
         checklist_state, updated_history
     )
 
-    # Check for missing fields
     missing_fields = [
         missing_info_key
         for missing_info_key, missing_info_value in new_checklist_state.items()
@@ -186,10 +166,8 @@ def process_event_step(
     ]
     is_finished = len(missing_fields) == 0
 
-    # Generate next question if not finished
     ai_response = generate_next_question(missing_fields, updated_history)
 
-    # Add AI response to history
     updated_history += f"\nAI: {ai_response}"
 
     return {
@@ -198,3 +176,44 @@ def process_event_step(
         "history": updated_history,
         "is_finished": is_finished,
     }
+
+
+def analyze_opinion(case_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Analyzes the full case data to determine if it meets the criteria for a work accident.
+    """
+    if not HAS_LLM_CLIENT or not client or not settings.groq_api_key:
+        print("⚠️ Brak konfiguracji LLM dla opinii")
+        return {
+            "error": "LLM not configured",
+            "decision": "unknown"
+        }
+    
+    zawiadomienie = case_data.get("zawiadomienie", {})
+    wyjasnienia = case_data.get("wyjasnienia", {})
+    
+    user_prompt = f"""
+    DANE SPRAWY DO ANALIZY:
+    
+    1. ZAWIADOMIENIE O WYPADKU:
+    {json.dumps(zawiadomienie, ensure_ascii=False, indent=2)}
+    
+    2. WYJAŚNIENIA POSZKODOWANEGO:
+    {json.dumps(wyjasnienia, ensure_ascii=False, indent=2)}
+    """
+    
+    try:
+        response_json_str = call_llm_api(
+            OPINION_ANALYSIS_PROMPT, 
+            user_prompt,
+            expect_json=True
+        )
+        
+        if not response_json_str:
+            return {"error": "Empty response from LLM"}
+            
+        return json.loads(response_json_str)
+        
+    except Exception as e:
+        print(f"❌ Error during opinion analysis: {e}")
+        return {"error": str(e)}

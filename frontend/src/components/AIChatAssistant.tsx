@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './AIChatAssistant.css'
 
 interface AIChatAssistantProps {
-    currentText: string
     onClose: () => void
     onUseText: (text: string) => void
     onUpdateFormData?: (data: any) => void
@@ -18,7 +17,7 @@ interface Message {
     content: string
 }
 
-export default function AIChatAssistant({ currentText, onClose, onUseText, onUpdateFormData, userData }: AIChatAssistantProps) {
+export default function AIChatAssistant({ onClose, onUseText, onUpdateFormData, userData }: AIChatAssistantProps) {
     const [messages, setMessages] = useState<Message[]>([])
     const [inputValue, setInputValue] = useState('')
     const [isTyping, setIsTyping] = useState(false)
@@ -38,7 +37,7 @@ export default function AIChatAssistant({ currentText, onClose, onUseText, onUpd
         startGroqSession()
     }, [])
 
-    const startGroqSession = async () => {
+    const startGroqSession = async (): Promise<string | null> => {
         setIsTyping(true)
         try {
             const response = await fetch('/api/start', {
@@ -52,47 +51,82 @@ export default function AIChatAssistant({ currentText, onClose, onUseText, onUpd
             })
             const data = await response.json()
             setSessionId(data.session_id)
-            setMessages([
-                { role: 'assistant', content: data.welcome_message }
-            ])
+            setMessages(prev => {
+                // Don't clear history if it's a reconnection, but maybe show a subtle message?
+                // For simplified UX, we just append the welcome message if it's the first time
+                if (prev.length === 0) {
+                    return [{ role: 'assistant', content: data.welcome_message }]
+                }
+                return prev
+            })
+            setIsTyping(false)
+            return data.session_id
         } catch (error) {
             console.error("Failed to start session:", error)
-            setMessages([{ role: 'assistant', content: "Przepraszam, wystąpił błąd połączenia z serwerem." }])
+            setMessages(prev => [...prev, { role: 'assistant', content: "Przepraszam, wystąpił błąd połączenia z serwerem." }])
+            setIsTyping(false)
+            return null
         }
-        setIsTyping(false)
     }
 
     const handleSend = async () => {
         if (!inputValue.trim()) return
 
-        const newMsg: Message = { role: 'user', content: inputValue }
+        const currentInput = inputValue
+        const newMsg: Message = { role: 'user', content: currentInput }
         setMessages(prev => [...prev, newMsg])
         setInputValue('')
         setIsTyping(true)
 
-        // Groq Mode Only
-        try {
+        const sendMessage = async (sid: string | null, text: string) => {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    session_id: sessionId,
-                    user_message: inputValue
+                    session_id: sid,
+                    user_message: text
                 })
             })
-            const data = await response.json()
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error("SESSION_EXPIRED")
+                }
+                throw new Error("API_ERROR")
+            }
+            return await response.json()
+        }
 
-            setMessages(prev => [...prev, { role: 'assistant', content: data.ai_message }])
+        try {
+            let data = null
+            try {
+                data = await sendMessage(sessionId, currentInput)
+            } catch (err: any) {
+                if (err.message === "SESSION_EXPIRED") {
+                    console.warn("Session expired, reconnecting...")
+                    const newSessionId = await startGroqSession()
+                    if (newSessionId) {
+                        data = await sendMessage(newSessionId, currentInput)
+                    } else {
+                        throw new Error("Could not reconnect")
+                    }
+                } else {
+                    throw err
+                }
+            }
 
-            if (data.is_finished && data.checklist) {
-                if (onUpdateFormData) {
-                    onUpdateFormData(data.checklist)
-                    setMessages(prev => [...prev, { role: 'assistant', content: "✅ Zebrałem wszystkie informacje i zaktualizowałem formularz." }])
+            if (data) {
+                setMessages(prev => [...prev, { role: 'assistant', content: data.ai_message }])
+
+                if (data.is_finished && data.checklist) {
+                    if (onUpdateFormData) {
+                        onUpdateFormData(data.checklist)
+                        setMessages(prev => [...prev, { role: 'assistant', content: "✅ Zebrałem wszystkie informacje i zaktualizowałem formularz." }])
+                    }
                 }
             }
         } catch (error) {
             console.error("Chat error:", error)
-            setMessages(prev => [...prev, { role: 'assistant', content: "Wystąpił błąd podczas rozmowy." }])
+            setMessages(prev => [...prev, { role: 'assistant', content: "Wystąpił błąd podczas rozmowy. Spróbuj odświeżyć okno." }])
         }
         setIsTyping(false)
     }

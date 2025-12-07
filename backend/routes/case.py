@@ -1,14 +1,17 @@
 from datetime import date
 from typing import List, Optional
+from pydantic import BaseModel
 
 from database.db import cases_db
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, Body
 from models.Case import Case
 from models.ZapisWyjasnienPoszkodowanego import ZapisWyjasnienPoszkodowanego
 from models.ZawiadomienieOWypadku import ZawiadomienieOWypadku
 
 router = APIRouter()
 
+class StatusUpdate(BaseModel):
+    status: str
 
 # ==========================================
 # 1. Lista spraw (Dashboard)
@@ -119,44 +122,59 @@ def update_wyjasnienia(case_id: str, data: ZapisWyjasnienPoszkodowanego):
     }
 
 
-# ==========================================
-# 6. Analiza / Walidacja (Dummy Logic)
-# ==========================================
-@router.post("/cases/{case_id}/analyze")
-def analyze_case(case_id: str):
+
+
+
+from service.event_description_llm import analyze_opinion
+
+@router.post("/cases/{case_id}/analyze-opinion")
+def analyze_case_opinion(case_id: str):
     """
-    Mock endpointu analitycznego AI.
+    Analiza kwalifikacji prawnej wypadku przez AI (Groq/Llama-3).
+    Sprawdza 4 przesłanki: nagłość, przyczyna zewn., uraz, związek z pracą.
     """
     case_data = next((c for c in cases_db if c["id"] == case_id), None)
     if not case_data:
         raise HTTPException(status_code=404, detail="Sprawa nie znaleziona")
 
-    zawiadomienie = case_data.get("zawiadomienie")
-    braki = []
-
-    if not zawiadomienie:
+    result = analyze_opinion(case_data)
+    
+    # Obsługa błędów LLM
+    if "error" in result:
+        # Możemy zwrócić 503 lub 200 z informacją o błędzie
         return {
-            "is_complete": False,
-            "status": "CRITICAL",
-            "message": "Brak wypełnionego zawiadomienia o wypadku.",
+             "error": True,
+             "message": result["error"],
+             "details": {
+                "suddenness": { "met": False, "justification": "Błąd analizy AI" },
+                "external_cause": { "met": False, "justification": "Błąd analizy AI" },
+                "injury": { "met": False, "justification": "Błąd analizy AI" },
+                "work_connection": { "met": False, "justification": "Błąd analizy AI" }
+             }
         }
 
-    # Przykładowa prosta logika walidacji
-    if (
-        not zawiadomienie.get("opis_okolicznosci")
-        or len(zawiadomienie.get("opis_okolicznosci", "")) < 50
-    ):
-        braki.append(
-            "Opis okoliczności jest zbyt krótki. Opisz dokładnie co się stało."
-        )
+    return result
 
-    if not zawiadomienie.get("swiadkowie"):
-        braki.append(
-            "Brak świadków. Jeśli nie było świadków, system będzie wymagał dodatkowych wyjaśnień."
-        )
 
+# ==========================================
+# 7. Aktualizacja Statusu
+# ==========================================
+@router.patch("/cases/{case_id}/status")
+def update_case_status(case_id: str, data: StatusUpdate):
+    """
+    Aktualizuje tylko status sprawy.
+    """
+    case_idx = next(
+        (i for i, c in enumerate(cases_db) if c["id"] == case_id), None
+    )
+
+    if case_idx is None:
+        raise HTTPException(status_code=404, detail="Sprawa nie znaleziona")
+
+    cases_db[case_idx]["status"] = data.status
+    
     return {
-        "is_complete": len(braki) == 0,
-        "missing_fields": braki,
-        "ai_suggestions": "Na podstawie opisu, wygląda to na uraz mechaniczny. Upewnij się, że maszyny miały aktualne przeglądy.",
+        "message": "Status zaktualizowany pomyślnie",
+        "case_id": case_id,
+        "new_status": data.status
     }

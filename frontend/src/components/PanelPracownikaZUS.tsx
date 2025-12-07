@@ -19,8 +19,8 @@ interface Case {
 }
 
 interface PanelPracownikaZUSProps {
-  onVerifyForm: (id: number, caseId: string) => void
-  onSeedData?: () => void
+  onVerifyForm: (id: number, caseId: string, currentStatus?: string) => void
+
   cases?: Case[]
 }
 
@@ -39,11 +39,12 @@ const EyeIcon = () => (
   </svg>
 )
 
-const AccidentIcon = () => (
+
+
+const CheckCircleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-    <line x1="12" y1="9" x2="12" y2="13" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 )
 
@@ -55,10 +56,10 @@ const FilterIcon = () => (
 
 
 
-export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [] }: PanelPracownikaZUSProps) {
+export default function PanelPracownikaZUS({ onVerifyForm, cases = [] }: PanelPracownikaZUSProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  
+
   // Konwersja cases z backendu na format używany w komponencie
   const formulazeDoRecenzji = cases.map((c, index) => ({
     id: index + 1,
@@ -68,8 +69,9 @@ export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [
     nip: c.zawiadomienie?.platnik_skladek?.nip_regon || 'Brak NIP',
     poszkodowany: c.poszkodowany ? `${c.poszkodowany.imie} ${c.poszkodowany.nazwisko}` : 'Nieznany',
     pesel: c.poszkodowany?.pesel || 'Brak PESEL',
-    status: c.status === 'Weryfikacja' ? 'pending' : c.status === 'W trakcie' ? 'in_review' : c.status === 'Wysłano' ? 'approved' : 'rejected',
-    priorytet: 'normal'
+    status: (c.status === 'Weryfikacja' || c.status === 'Szkic' || c.status === 'Nowe') ? 'pending' : (c.status === 'W trakcie' || c.status === 'W weryfikacji') ? 'in_review' : (c.status === 'Wysłano' || c.status === 'Zatwierdzone') ? 'approved' : 'rejected',
+    priorytet: 'normal',
+    originalStatus: c.status // Store original status for logic
   }))
 
   const getStatusLabel = (status: string) => {
@@ -91,8 +93,8 @@ export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [
     }
   }
 
-  const handleVerifyForm = (id: number, caseId: string) => {
-    onVerifyForm(id, caseId)
+  const handleVerifyForm = (id: number, caseId: string, status: string) => {
+    onVerifyForm(id, caseId, status)
   }
 
   const filteredFormularze = formulazeDoRecenzji.filter(form => {
@@ -104,21 +106,14 @@ export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [
   const stats = {
     pending: formulazeDoRecenzji.filter(f => f.status === 'pending').length,
     inReview: formulazeDoRecenzji.filter(f => f.status === 'in_review').length,
-    highPriority: formulazeDoRecenzji.filter(f => f.priorytet === 'high').length,
+    completed: formulazeDoRecenzji.filter(f => f.status === 'approved' || f.status === 'rejected').length,
   }
 
   return (
     <div className="panel-pracownika-zus">
       <h1 className="page-title">Panel Pracownika ZUS - Weryfikacja Zgłoszeń</h1>
 
-      {/* Przycisk generowania danych testowych */}
-      {onSeedData && (
-        <div style={{ marginBottom: '20px' }}>
-          <button onClick={onSeedData} style={{ padding: '8px 16px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
-            🛠 Generuj dane testowe (Debug)
-          </button>
-        </div>
-      )}
+
 
       {/* Statystyki */}
       <div className="stats-grid">
@@ -143,12 +138,12 @@ export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon urgent">
-            <AccidentIcon />
+          <div className="stat-icon completed" style={{ background: '#e6fffa', color: '#00b894' }}>
+            <CheckCircleIcon />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{stats.highPriority}</div>
-            <div className="stat-label">Wysoki priorytet</div>
+            <div className="stat-value">{stats.completed}</div>
+            <div className="stat-label">Zakończone</div>
           </div>
         </div>
       </div>
@@ -242,9 +237,9 @@ export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [
                     <td>
                       <button
                         className="btn-action"
-                        onClick={() => handleVerifyForm(form.id, form.caseId)}
+                        onClick={() => handleVerifyForm(form.id, form.caseId, form.originalStatus)}
                       >
-                        Weryfikuj
+                        {form.status === 'approved' || form.status === 'rejected' ? 'Podgląd' : 'Weryfikuj'}
                       </button>
                     </td>
                   </tr>
