@@ -20,7 +20,7 @@ interface Case {
 
 interface PanelPracownikaZUSProps {
   onVerifyForm: (id: number, caseId: string, currentStatus?: string) => void
-
+  onSeedData: () => void
   cases?: Case[]
 }
 
@@ -56,7 +56,7 @@ const FilterIcon = () => (
 
 
 
-export default function PanelPracownikaZUS({ onVerifyForm, cases = [] }: PanelPracownikaZUSProps) {
+export default function PanelPracownikaZUS({ onVerifyForm, onSeedData, cases = [] }: PanelPracownikaZUSProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
 
@@ -111,7 +111,27 @@ export default function PanelPracownikaZUS({ onVerifyForm, cases = [] }: PanelPr
 
   return (
     <div className="panel-pracownika-zus">
-      <h1 className="page-title">Panel Pracownika ZUS - Weryfikacja Zgłoszeń</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 className="page-title">Panel Pracownika ZUS - Weryfikacja Zgłoszeń</h1>
+        <button
+          onClick={onSeedData}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#6c757d',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          title="Generuje przykładowe dane do testów"
+        >
+          <span style={{ fontSize: '16px' }}>🛠️</span> Debug: Seed Data
+        </button>
+      </div>
 
 
 

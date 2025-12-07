@@ -196,10 +196,10 @@ def analyze_opinion(case_data: Dict[str, Any]) -> Dict[str, Any]:
     DANE SPRAWY DO ANALIZY:
     
     1. ZAWIADOMIENIE O WYPADKU:
-    {json.dumps(zawiadomienie, ensure_ascii=False, indent=2)}
+    {json.dumps(zawiadomienie, ensure_ascii=False, indent=2, default=str)}
     
     2. WYJAŚNIENIA POSZKODOWANEGO:
-    {json.dumps(wyjasnienia, ensure_ascii=False, indent=2)}
+    {json.dumps(wyjasnienia, ensure_ascii=False, indent=2, default=str)}
     """
     
     try:
